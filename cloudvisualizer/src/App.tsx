@@ -1,34 +1,60 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Link, Route, BrowserRouter as Router, Routes } from 'react-router'
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function Home() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">Welcome to Cloud Visualizer</h1>
+      <div className="bg-white rounded-lg shadow p-6">
+        <p className="text-gray-700">
+          A tool for visualizing cloud infrastructure
         </p>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
+  )
+}
+
+function About() {
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">About</h1>
+      <div className="bg-white rounded-lg shadow p-6">
+        <p className="text-gray-700">
+          Cloud Visualizer helps you understand and manage your cloud resources
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function NotFound() {
+  return (
+    <div className="p-6">
+      <h1 className="text-3xl font-bold mb-4">404: Page Not Found</h1>
+      <p className="text-gray-700">The page you're looking for doesn't exist.</p>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <Router>
+      <div className="flex">
+        <nav className="w-[200px] min-h-screen p-5 bg-gray-100 border-r border-gray-200">
+          <div className="flex flex-col gap-3">
+            <Link to="/" className="text-gray-700 hover:text-gray-900 no-underline">Home</Link>
+            <Link to="/about" className="text-gray-700 hover:text-gray-900 no-underline">About</Link>
+          </div>
+        </nav>
+
+        <main className="flex-1 p-5">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   )
 }
 
