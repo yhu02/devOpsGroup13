@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    
 
 jobs:
   deploy:
@@ -17,6 +19,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
+
+      - name: cd into the project directory
+        shell: bash
+        run: cd cloudvisualizer
 
       - name: Install Dependencies
         run: npm install
