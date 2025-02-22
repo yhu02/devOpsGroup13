@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { DataSet, Network } from 'vis-network'
+import { Network } from 'vis-network'
+import { DataSet } from 'vis-data'
 import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'

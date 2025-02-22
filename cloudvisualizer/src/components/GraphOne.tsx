@@ -1,4 +1,5 @@
-import { DataSet, Edge, Network, Node } from 'vis-network'
+import { Edge, Network, Node } from 'vis-network'
+import { DataSet } from 'vis-data'
 import type { AwsResource, Dependency } from '../types/AWS'
 import { resourceVisuals } from '../utils/AWSVisuals'
 
