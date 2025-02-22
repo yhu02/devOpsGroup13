@@ -20,10 +20,6 @@ jobs:
         with:
           node-version: '16'
 
-      - name: cd into the project directory
-        shell: bash
-        run: cd cloudvisualizer
-
       - name: Install Dependencies
         run: npm install
 
