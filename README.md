@@ -19,7 +19,9 @@ At a minimum, the project will deliver:
 # Additional Feature (Optional):
 Explainability in Dependency Mapping – Providing insights into how and why cloud resources are interlinked.
 
-
+# Dockerfile
+docker build -t cloudvisualizer .
+docker run -p 5173:5173 cloudvisualizer
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
