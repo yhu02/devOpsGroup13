@@ -88,10 +88,10 @@ jobs:
             latest=${{ steps.set-resources.outputs.useLatestTag }}
             prefix=
             suffix=.${{ github.run_id }}
-          #tags: |
-          #  type=raw,value=${{ inputs.image-version }}
+          tags: |
+            type=raw,value=1
         
-      - name: Build and push Docker image with Artifactory
+      - name: Build and push Docker image
         id: build-image
         uses: docker/build-push-action@v6
         with:
