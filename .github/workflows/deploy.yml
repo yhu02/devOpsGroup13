@@ -30,16 +30,19 @@ jobs:
       - name: Build Vite Project
         run: npm run build
 
-    #   - name: Build CDK (TypeScript) Project
-    #     run: npm run cdk:build
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: eu-north-1
           role-to-assume: arn:aws:iam::970547379814:role/deploy-gh-actions
-    #   - name: Bootstrap CDK Environment (if needed)
-    #     run: npx cdk bootstrap
 
-    #   - name: Deploy CDK Stack
-    #     run: npx cdk deploy --all --require-approval never
+      - name: Bootstrap CDK Environment (if needed)
+        run: npx cdk bootstrap
+
+      - name: Install CDK globally and install projects dependencies
+        shell: bash
+        working-directory: infra
+        run: |
+          npm i -g aws-cdk
+          npx cdk deploy --all --require-approval never
