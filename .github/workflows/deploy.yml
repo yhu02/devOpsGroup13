@@ -32,7 +32,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: eu-north-1
+          aws-region: eu-central-1
           role-to-assume: arn:aws:iam::970547379814:role/deploy-gh-actions
 
       - name: Install CDK globally and install projects dependencies
