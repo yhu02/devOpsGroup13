@@ -37,13 +37,11 @@ jobs:
           aws-region: eu-north-1
           role-to-assume: arn:aws:iam::970547379814:role/deploy-gh-actions
 
-      - name: Bootstrap CDK Environment (if needed)
-        run: npx cdk bootstrap
-
       - name: Install CDK globally and install projects dependencies
         shell: bash
         working-directory: infra
         run: |
+          npx cdk bootstrap
           npm i -g aws-cdk
           npx cdk deploy --all --require-approval never
 
