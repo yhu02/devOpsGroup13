@@ -41,6 +41,7 @@ jobs:
         shell: bash
         working-directory: infra
         run: |
+          npm ci
           npx cdk bootstrap
           npm i -g aws-cdk
           npx cdk deploy --all --require-approval never
