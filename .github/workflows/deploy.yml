@@ -60,7 +60,7 @@ jobs:
         run: |
           # Set defaults
   
-          DOCKER_CONTEXT=".."
+          DOCKER_CONTEXT=${{ github.workspace }}
   
           echo "dockerContext=${DOCKER_CONTEXT}" >> ${GITHUB_OUTPUT}
           echo "dockerFile=${DOCKER_CONTEXT}/Dockerfile" >> ${GITHUB_OUTPUT}  
