@@ -4,6 +4,7 @@ import { DataSet } from 'vis-data'
 import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
+import { getVPCFlowLogs } from '../../aws/cloudwatchapi'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
@@ -49,18 +50,27 @@ function Home() {
       const nodes = new DataSet(nodeData) // no problem for nodes
       const edges = new DataSet<GraphEdge>(edgeData) // typed as GraphEdge
 
-      const network = new Network(networkRef.current, { nodes, edges }, {
-        autoResize: true,
-        physics: { enabled: true },
-        layout: { improvedLayout: true },
-      })
+      const network = new Network(
+        networkRef.current,
+        { nodes, edges },
+        {
+          autoResize: true,
+          physics: { enabled: true },
+          layout: { improvedLayout: true },
+        }
+      )
 
       network.on('click', (params) => {
         if (params.nodes.length > 0) {
           const nodeId = params.nodes[0]
           const resource = resources.find((r) => r.id === nodeId)
           if (resource) {
-            console.log('Clicked resource:', resource.name, 'of type', resource.type)
+            console.log(
+              'Clicked resource:',
+              resource.name,
+              'of type',
+              resource.type
+            )
           }
         }
       })
@@ -74,6 +84,13 @@ function Home() {
         <p>A tool for visualizing cloud infrastructure</p>
         <div ref={networkRef} style={{ height: 600, width: '100%' }} />
       </div>
+      <button
+        onClick={() => {
+          getVPCFlowLogs()
+        }}
+      >
+        TESTTTTT
+      </button>
     </div>
   )
 }

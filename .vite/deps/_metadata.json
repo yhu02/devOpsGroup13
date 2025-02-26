@@ -1,0 +1,55 @@
+{
+  "hash": "29f2b831",
+  "configHash": "bb3afe7e",
+  "lockfileHash": "7380e07c",
+  "browserHash": "d063f06c",
+  "optimized": {
+    "react/jsx-dev-runtime": {
+      "src": "../../node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "1f7a2ff5",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "e1702bba",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "2725d294",
+      "needsInterop": true
+    },
+    "react-router": {
+      "src": "../../node_modules/react-router/dist/development/index.mjs",
+      "file": "react-router.js",
+      "fileHash": "12b87d61",
+      "needsInterop": false
+    },
+    "vis-network": {
+      "src": "../../node_modules/vis-network/peer/esm/vis-network.js",
+      "file": "vis-network.js",
+      "fileHash": "c314760d",
+      "needsInterop": false
+    },
+    "vis-data": {
+      "src": "../../node_modules/vis-data/peer/esm/vis-data.js",
+      "file": "vis-data.js",
+      "fileHash": "101ca401",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-VUPZMC2T": {
+      "file": "chunk-VUPZMC2T.js"
+    },
+    "chunk-LXYOR3LX": {
+      "file": "chunk-LXYOR3LX.js"
+    },
+    "chunk-EQCVQC35": {
+      "file": "chunk-EQCVQC35.js"
+    }
+  }
+}
