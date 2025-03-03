@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Network } from 'vis-network'
 import { DataSet } from 'vis-data'
 import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
-import { getVPCFlowLogs } from '../../aws/cloudwatchapi'
+import { createNodeObjects } from '../../aws/cloudwatchapi'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
@@ -18,17 +18,19 @@ interface GraphEdge {
 function Home() {
   const networkRef = useRef<HTMLDivElement>(null)
 
+  // State for resources and dependencies
+  const [resources, setResources] = useState<AwsResource[]>([
+    { id: 'vpc-1', type: 'VPC', name: 'Main VPC' },
+    { id: 'rds-1', type: 'RDS', name: 'OrdersDB' },
+  ])
+
+  const [dependencies, setDependencies] = useState<Dependency[]>([
+    { from: 'vpc-1', to: 'rds-1', relationship: 'contains' },
+  ])
+
+  // Create network visualization
   useEffect(() => {
     if (networkRef.current) {
-      const resources: AwsResource[] = [
-        { id: 'vpc-1', type: 'VPC', name: 'Main VPC' },
-        { id: 'rds-1', type: 'RDS', name: 'OrdersDB' },
-      ]
-
-      const dependencies: Dependency[] = [
-        { from: 'vpc-1', to: 'rds-1', relationship: 'contains' },
-      ]
-
       const nodeData = resources.map((res) => ({
         id: res.id,
         label: res.name,
@@ -37,18 +39,15 @@ function Home() {
         color: resourceVisuals[res.type]?.color,
       }))
 
-      // Use the local 'GraphEdge' type
       const edgeData: GraphEdge[] = dependencies.map((dep) => ({
-        // Optionally assign your own unique ID if you like:
-        // id: `${dep.from}-${dep.to}`,
         from: dep.from,
         to: dep.to,
         label: dep.relationship,
         arrows: 'to',
       }))
 
-      const nodes = new DataSet(nodeData) // no problem for nodes
-      const edges = new DataSet<GraphEdge>(edgeData) // typed as GraphEdge
+      const nodes = new DataSet(nodeData)
+      const edges = new DataSet<GraphEdge>(edgeData)
 
       const network = new Network(
         networkRef.current,
@@ -74,8 +73,26 @@ function Home() {
           }
         }
       })
+
+      // Return cleanup function
+      return () => {
+        network.destroy()
+      }
     }
-  }, [])
+  }, [resources, dependencies]) // Re-run when resources or dependencies change
+
+  // Handle button click
+  const handleLoadData = async () => {
+    try {
+      const result = await createNodeObjects()
+      if (result.resources && result.dependencies) {
+        setResources(result.resources)
+        setDependencies(result.dependencies)
+      }
+    } catch (error) {
+      console.error('Error loading AWS data:', error)
+    }
+  }
 
   return (
     <div>
@@ -84,13 +101,7 @@ function Home() {
         <p>A tool for visualizing cloud infrastructure</p>
         <div ref={networkRef} style={{ height: 600, width: '100%' }} />
       </div>
-      <button
-        onClick={() => {
-          getVPCFlowLogs()
-        }}
-      >
-        TESTTTTT
-      </button>
+      <button onClick={handleLoadData}>Load VPC Flow Data</button>
     </div>
   )
 }
