@@ -3,284 +3,159 @@ import {
   CloudWatchLogsClient,
   StartQueryCommand,
   GetQueryResultsCommand,
-  ResultField,
 } from '@aws-sdk/client-cloudwatch-logs'
-
-//   Based on: https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/javascriptv3/example_code/cloudwatch-logs/scenarios/large-query/cloud-watch-query.js
 
 interface CloudWatchQueryConfig {
   logGroupNames: string[]
   queryString: string
-  startTime?: Date
-  endTime?: Date
-  limit?: number
+  startTime: Date
+  endTime: Date
+  limit: number
 }
 
 interface FormattedLogResult {
   [key: string]: string
 }
 
-export class CloudWatchQuery {
+class CloudWatchQuery {
   private client: CloudWatchLogsClient
-  private logGroupNames: string[]
-  private queryString: string
-  private startTime: Date
-  private endTime: Date
-  private limit: number
-  private results: FormattedLogResult[] = []
-  private secondsElapsed: number = 0
+  private config: CloudWatchQueryConfig
 
-  /**
-   * Class for running CloudWatch Logs Insights queries
-   * @param client - The CloudWatch Logs client
-   * @param config - Configuration options
-   */
   constructor(client: CloudWatchLogsClient, config: CloudWatchQueryConfig) {
     this.client = client
-
-    // Set log groups to query (you can pass an array with multiple log groups)
-    this.logGroupNames = config.logGroupNames
-
-    // The query string to run
-    this.queryString = config.queryString
-
-    // Default to the last 24 hours if not specified
-    this.startTime =
-      config.startTime || new Date(Date.now() - 24 * 60 * 60 * 1000)
-    this.endTime = config.endTime || new Date()
-
-    // set 10 as a fall back to avoid high costs
-    this.limit = config.limit || 10
+    this.config = {
+      logGroupNames: config.logGroupNames,
+      queryString: config.queryString,
+      startTime: config.startTime,
+      endTime: config.endTime,
+      limit: config.limit,
+    }
   }
-
-  /**
-   * Run the query and get formatted results
-   * @returns Promise with formatted query results
-   */
   async run(): Promise<FormattedLogResult[]> {
-    const start = new Date()
-
     try {
-      // Start the query
-      const { queryId } = await this._startQuery()
-      if (!queryId) {
-        throw new Error('Failed to start CloudWatch Logs query')
-      }
-
-      console.log(`Query started with ID: ${queryId}`)
-
-      // Wait for query completion and get results
-      const { results, status } = await this._waitUntilQueryDone(queryId)
-
-      if (status === 'Failed') {
-        throw new Error('CloudWatch Logs query failed')
-      } else if (status === 'Cancelled') {
-        throw new Error('CloudWatch Logs query was cancelled')
-      } else if (status === 'Timeout') {
-        throw new Error('CloudWatch Logs query timed out')
-      }
-
-      // Format the results into a more usable structure
-      this.results = this._formatResults(results || [])
-
-      const end = new Date()
-      this.secondsElapsed = (end.getTime() - start.getTime()) / 1000
-
-      console.log(
-        `Query completed in ${this.secondsElapsed.toFixed(2)} seconds. Found ${this.results.length} logs.`
+      const { queryId } = await this.client.send(
+        new StartQueryCommand({
+          logGroupNames: this.config.logGroupNames,
+          queryString: this.config.queryString,
+          startTime: Math.floor(this.config.startTime.valueOf() / 1000),
+          endTime: Math.floor(this.config.endTime.valueOf() / 1000),
+          limit: this.config.limit,
+        })
       )
-      return this.results
+      if (!queryId) throw new Error('Failed to start CloudWatch Logs query')
+
+      return await this._getResults(queryId)
     } catch (error) {
-      console.error('Error running CloudWatch Logs query:', error)
-      throw error
+      console.error('CloudWatch Logs query error: ', error)
+      return []
     }
   }
 
-  /**
-   * Start a query using the StartQueryCommand
-   * @returns Promise with the query ID
-   * @private
-   */
-  private async _startQuery(): Promise<{ queryId?: string }> {
-    return this.client.send(
-      new StartQueryCommand({
-        logGroupNames: this.logGroupNames,
-        queryString: this.queryString,
-        startTime: Math.floor(this.startTime.valueOf() / 1000),
-        endTime: Math.floor(this.endTime.valueOf() / 1000),
-        limit: this.limit,
-      })
-    )
-  }
-
-  /**
-   * Poll for query results until completion
-   * @param queryId - The query ID to check
-   * @returns Promise with query results and status
-   * @private
-   */
-  private async _waitUntilQueryDone(
-    queryId: string
-  ): Promise<{ results?: ResultField[][]; status?: string }> {
-    const maxRetries = 60 // 60 seconds timeout
-    let retries = 0
-
-    while (retries < maxRetries) {
-      const result = await this.client.send(
+  private async _getResults(queryId: string): Promise<FormattedLogResult[]> {
+    const maxTries = 60
+    for (let retries = 0; retries < maxTries; retries++) {
+      const { results, status } = await this.client.send(
         new GetQueryResultsCommand({ queryId })
       )
-
-      const queryDone = [
-        'Complete',
-        'Failed',
-        'Cancelled',
-        'Timeout',
-        'Unknown',
-      ].includes(result.status || '')
-
-      if (queryDone) {
-        return result
+      if (
+        ['Complete', 'Failed', 'Cancelled', 'Timeout'].includes(status || '')
+      ) {
+        if (status !== 'Complete') throw new Error(`Query failed: ${status}`)
+        return (
+          results?.map((entry) =>
+            Object.fromEntries(entry.map(({ field, value }) => [field, value]))
+          ) || []
+        )
       }
-
-      // Wait 1 second before checking again
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      retries++
+      await new Promise((res) => setTimeout(res, 1000))
     }
-
-    throw new Error('Query timed out waiting for completion')
-  }
-
-  /**
-   * Format the raw CloudWatch Logs results into a more usable structure
-   * @param results - The raw query results
-   * @returns Formatted results
-   * @private
-   */
-  private _formatResults(results: ResultField[][]): FormattedLogResult[] {
-    return results.map((result) => {
-      const row: FormattedLogResult = {}
-
-      result.forEach((element) => {
-        if (element.field && element.value !== undefined) {
-          row[element.field] = element.value
-        }
-      })
-
-      return row
-    })
+    throw new Error(`Query timed out after: ${maxTries} tries`)
   }
 }
 
-// Function to create a CloudWatchQuery client for our VPC Flow Logs
-export function createVpcFlowLogsQuery(): CloudWatchQuery {
+function createVpcFlowLogsQuery(): CloudWatchQuery {
   const client = new CloudWatchLogsClient({
-    // You should create a .env file in the rootfolder with these as the keys and then ur access key as the value
     region: import.meta.env.VITE_AWS_REGION,
     credentials: {
       accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
       secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
     },
   })
-  // The query we are running
   return new CloudWatchQuery(client, {
     logGroupNames: ['/aws/vpc/test-flow-logs'],
     queryString: `
-        fields @timestamp, srcAddr, dstAddr, action, protocol, packets, bytes
-        | filter action = "ACCEPT"
-        | sort @timestamp desc
-        | limit 10
-      `,
+      fields @timestamp, srcAddr, dstAddr, type
+      | filter action = "ACCEPT" and not(type like "ntm")
+      | sort @timestamp desc
+      | limit 10`,
+    startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    endTime: new Date(),
     limit: 10,
-    startTime: new Date(Date.now() - 24 * 60 * 60 * 1000 * 7),
   })
 }
-interface VpcFlowLog {
-  '@ptr': string
-  '@timestamp': string
-  action: string
-  bytes: string
-  dstAddr: string
-  packets: string
-  protocol: string
-  srcAddr: string
+function getResourceMap() {
+  const resourceMap = new Map<string, AwsResource>([
+    ['172.31.42.86', { id: 'VPCID', type: 'VPC', name: 'The VPC' }],
+  ])
+  return resourceMap
 }
 
-export async function createNodeObjects() {
-  const rawLogs = await getVPCFlowLogs()
-
-  if (!rawLogs || rawLogs.length === 0) {
-    console.warn('No VPC flow logs found')
-    return { resources: [], dependencies: [] }
-  }
-
-  // Convert FormattedLogResult[] to VpcFlowLog[] with correct type mapping
-  const logs = rawLogs.map((log) => {
-    return {
-      '@ptr': log['@ptr'] || '',
-      '@timestamp': log['@timestamp'] || '',
-      action: log.action || '',
-      bytes: log.bytes || '0',
-      dstAddr: log.dstAddr || '',
-      packets: log.packets || '0',
-      protocol: log.protocol || '',
-      srcAddr: log.srcAddr || '',
-    } as VpcFlowLog
-  })
-
-  // Create a map to store unique resources (nodes)
-  const resourcesMap = new Map<string, AwsResource>()
-  const dependencies: Dependency[] = []
-
-  // Process each log entry
-  logs.forEach((log) => {
-    const sourceId = log.srcAddr
-    const destId = log.dstAddr
-
-    // Create or ensure source resource exists
-    if (!resourcesMap.has(sourceId)) {
-      resourcesMap.set(sourceId, {
-        id: sourceId,
-        type: 'EC2', // TODO remove hardcoding here
-        name: `Instance ${sourceId}`,
-      })
-    }
-
-    // Create or ensure destination resource exists
-    if (!resourcesMap.has(destId)) {
-      resourcesMap.set(destId, {
-        id: destId,
-        type: 'IP', // TODO remove hardcoding here
-        name: `Endpoint ${destId}`,
-      })
-    }
-
-    // Add dependency (connection) between resources
-    dependencies.push({
-      from: sourceId,
-      to: destId,
-      relationship: 'communicates with',
-    })
-  })
-
-  // Convert map to array of resources
-  const resources = Array.from(resourcesMap.values())
-
-  console.log(
-    `Created ${resources.length} resources and ${dependencies.length} dependencies`
-  )
-  console.log(resources, dependencies)
-  return { resources, dependencies }
-}
-
-export async function getVPCFlowLogs() {
+export async function getVPCFlowLogs(): Promise<{
+  resources: AwsResource[]
+  dependencies: Dependency[]
+}> {
   try {
-    const query = createVpcFlowLogsQuery()
-    const results = await query.run()
-    console.log('VPC Flow Logs query completed:', results)
-    return results
+    const logs = await createVpcFlowLogsQuery().run()
+    const dependencies: Dependency[] = []
+
+    const resourceMap = getResourceMap()
+    const dependencyMap = new Map<string, Set<string>>()
+
+    logs.forEach((log) => {
+      const src = log.srcAddr
+      const dst = log.dstAddr
+
+      // Check if the src IP exists in the map, otherwise add it
+      if (src && !resourceMap.has(src)) {
+        resourceMap.set(src, { id: src, type: 'IP', name: `Source ${src}` })
+      }
+
+      // Check if the dst IP exists in the map, otherwise add it
+      if (dst && !resourceMap.has(dst)) {
+        resourceMap.set(dst, {
+          id: dst,
+          type: 'IP',
+          name: `Destination ${dst}`,
+        })
+      }
+
+      // Retrieve the IDs for src and dst, ensuring they exist in the map
+      const dstID = resourceMap.get(dst)?.id || dst
+      const srcID = resourceMap.get(src)?.id || src
+
+      // Record dependencies if both src and dst are available
+      if (src && dst) {
+        if (!dependencyMap.has(srcID)) {
+          dependencyMap.set(srcID, new Set())
+        }
+
+        if (!dependencyMap.get(srcID)?.has(dstID)) {
+          dependencies.push({
+            from: srcID,
+            to: resourceMap.get(dst)?.id || dst,
+            relationship: 'connects to',
+          })
+          dependencyMap.get(srcID)?.add(dstID)
+        }
+      }
+    })
+
+    console.log(resourceMap)
+    console.log(dependencies)
+
+    return { resources: Array.from(resourceMap.values()), dependencies }
   } catch (error) {
-    console.error('Error in VPC Flow Logs query handler:', error)
-    alert('Error querying VPC Flow Logs. Check console for details.')
-    return []
+    console.error('Error querying VPC Flow Logs:', error)
+    return { resources: [], dependencies: [] }
   }
 }

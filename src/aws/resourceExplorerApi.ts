@@ -16,19 +16,7 @@ async function findResourcesInVpc(
     },
   })
 
-  const query = `
-    vpc-id = '${vpcId}' 
-    OR resourcetype:'AWS::EC2::Instance' AND configuration.vpcId = '${vpcId}'
-    OR resourcetype:'AWS::RDS::DBInstance' AND configuration.DBSubnetGroup.VpcId = '${vpcId}'
-    OR resourcetype:'AWS::ElasticLoadBalancingV2::LoadBalancer' AND configuration.VpcId = '${vpcId}'
-    OR resourcetype:'AWS::Lambda::Function' AND configuration.VpcConfig.VpcId = '${vpcId}'
-    OR resourcetype:'AWS::EC2::SecurityGroup' AND configuration.vpcId = '${vpcId}'
-    OR resourcetype:'AWS::EC2::Subnet' AND configuration.vpcId = '${vpcId}'
-    OR resourcetype:'AWS::EC2::RouteTable' AND configuration.vpcId = '${vpcId}'
-    OR resourcetype:'AWS::EC2::NetworkInterface' AND configuration.vpcId = '${vpcId}'
-    OR resourcetype:'AWS::ElastiCache::CacheCluster' AND configuration.CacheSubnetGroup.VPC.VpcId = '${vpcId}'
-    OR resourcetype:'AWS::EFS::FileSystem' AND configuration.FileSystemId IN RELATED(resourcetype:'AWS::EFS::MountTarget' AND configuration.VpcId = '${vpcId}')
-  `
+  const query = `resourcetype:'AWS::EC2::Instance'`
 
   const searchParams: SearchCommandInput = {
     QueryString: query,

@@ -4,7 +4,7 @@ import { DataSet } from 'vis-data'
 import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
-import { createNodeObjects } from '../../aws/cloudwatchapi'
+import { getVPCFlowLogs } from '../../aws/cloudwatchapi'
 import { testResourceExplorer } from '../../aws/resourceExplorerApi'
 
 // Define your own type for edges with an optional "id"
@@ -85,7 +85,7 @@ function Home() {
   // Handle button click
   const handleLoadData = async () => {
     try {
-      const result = await createNodeObjects()
+      const result = await getVPCFlowLogs()
       if (result.resources && result.dependencies) {
         setResources(result.resources)
         setDependencies(result.dependencies)
