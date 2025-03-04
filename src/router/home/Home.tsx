@@ -5,6 +5,7 @@ import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
 import { createNodeObjects } from '../../aws/cloudwatchapi'
+import { testResourceExplorer } from '../../aws/resourceExplorerApi'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
@@ -102,6 +103,8 @@ function Home() {
         <div ref={networkRef} style={{ height: 600, width: '100%' }} />
       </div>
       <button onClick={handleLoadData}>Load VPC Flow Data</button>
+      <hr />
+      <button onClick={testResourceExplorer}>test</button>
     </div>
   )
 }
