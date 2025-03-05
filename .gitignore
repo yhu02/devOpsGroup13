@@ -26,3 +26,9 @@ dist-ssr
 # Secrets!
 *.env
 .env
+
+
+
+# Dependecies!
+/.vite/deps/*
+
