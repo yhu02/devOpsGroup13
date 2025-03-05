@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react'
 import { DataSet } from 'vis-data'
 import { Network } from 'vis-network'
@@ -20,6 +19,15 @@ interface GraphEdge {
 function Home() {
   const networkRef = useRef<HTMLDivElement>(null)
 
+  // State for resources and dependencies
+  const [resources, setResources] = useState<AwsResource[]>([
+    { id: 'vpc-1', type: 'VPC', name: 'Main VPC' },
+    { id: 'rds-1', type: 'RDS', name: 'OrdersDB' },
+  ])
+
+  const [dependencies, setDependencies] = useState<Dependency[]>([
+    { from: 'vpc-1', to: 'rds-1', relationship: 'contains' },
+  ])
 
   // Create network visualization
   useEffect(() => {
@@ -47,8 +55,6 @@ function Home() {
         { nodes, edges },
         {
           autoResize: true,
-          physics: { enabled: true },
-          layout: { improvedLayout: true },
           width: '100%',
           height: '100%',
           locale: 'en',
