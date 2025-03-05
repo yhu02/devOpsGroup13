@@ -1,8 +1,11 @@
+import { Suspense, lazy } from 'react'
 import { Route, BrowserRouter as Router, Routes } from 'react-router'
-import NotFound from './components/NotFound'
 import SideBar from './components/SideBar'
-import About from './router/about/About'
-import Home from './router/home/Home'
+
+// Lazy load route components
+const NotFound = lazy(() => import('./components/NotFound'))
+const About = lazy(() => import('./router/about/About'))
+const Home = lazy(() => import('./router/home/Home'))
 
 function App() {
   return (
@@ -11,11 +14,13 @@ function App() {
         <SideBar />
 
         <main className="flex-1 p-5">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<div>Loading...</div>}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/about" element={<About />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     </Router>
