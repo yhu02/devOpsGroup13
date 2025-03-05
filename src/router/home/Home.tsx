@@ -5,7 +5,6 @@ import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
 import { getVPCFlowLogs } from '../../aws/cloudwatchapi'
-import { testResourceExplorer } from '../../aws/resourceExplorerApi'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
@@ -22,11 +21,26 @@ function Home() {
   // State for resources and dependencies
   const [resources, setResources] = useState<AwsResource[]>([
     { id: 'vpc-1', type: 'VPC', name: 'Main VPC' },
+    { id: 'vpc-2', type: 'VPC', name: 'Secondary VPC' },
     { id: 'rds-1', type: 'RDS', name: 'OrdersDB' },
+    { id: 'rds-2', type: 'RDS', name: 'AnalyticsDB' },
+    { id: 'ec2-1', type: 'EC2', name: 'Web Server' },
+    { id: 'ec2-2', type: 'EC2', name: 'API Server' },
+    { id: 'ec2-3', type: 'EC2', name: 'Worker Node' },
   ])
 
   const [dependencies, setDependencies] = useState<Dependency[]>([
     { from: 'vpc-1', to: 'rds-1', relationship: 'contains' },
+    { from: 'vpc-1', to: 'ec2-1', relationship: 'contains' },
+    { from: 'vpc-1', to: 'ec2-2', relationship: 'contains' },
+    { from: 'vpc-2', to: 'rds-2', relationship: 'contains' },
+    { from: 'vpc-2', to: 'ec2-3', relationship: 'contains' },
+    { from: 'ec2-1', to: 'rds-1', relationship: 'connects' },
+    { from: 'ec2-2', to: 'rds-1', relationship: 'connects' },
+    { from: 'ec2-2', to: 'rds-2', relationship: 'connects' },
+    { from: 'ec2-3', to: 'rds-2', relationship: 'connects' },
+    { from: 'ec2-1', to: 'ec2-2', relationship: 'communicates' },
+    { from: 'ec2-2', to: 'ec2-3', relationship: 'communicates' },
   ])
 
   // Create network visualization
@@ -39,16 +53,17 @@ function Home() {
         image: resourceVisuals[res.type]?.icon,
         color: resourceVisuals[res.type]?.color,
       }))
-
+      // Use the local 'GraphEdge' type
       const edgeData: GraphEdge[] = dependencies.map((dep) => ({
+        // Optionally assign your own unique ID if you like:
+        // id: `${dep.from}-${dep.to}`,
         from: dep.from,
         to: dep.to,
         label: dep.relationship,
         arrows: 'to',
       }))
-
-      const nodes = new DataSet(nodeData)
-      const edges = new DataSet<GraphEdge>(edgeData)
+      const nodes = new DataSet(nodeData) // no problem for nodes
+      const edges = new DataSet<GraphEdge>(edgeData) // typed as GraphEdge
 
       const network = new Network(
         networkRef.current,
@@ -238,11 +253,14 @@ function Home() {
       <h1>Welcome to Cloud Visualizer</h1>
       <div>
         <p>A tool for visualizing cloud infrastructure</p>
+        <button
+          onClick={handleLoadData}
+          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+        >
+          Load VPC flow log
+        </button>
         <div ref={networkRef} style={{ height: '100vh', width: '100%' }} />
       </div>
-      <button onClick={handleLoadData}>Load VPC Flow Data</button>
-      <hr />
-      <button onClick={testResourceExplorer}>test</button>
     </div>
   )
 }
