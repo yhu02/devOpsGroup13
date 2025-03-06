@@ -84,18 +84,19 @@ function createVpcFlowLogsQuery(): CloudWatchQuery {
   return new CloudWatchQuery(client, {
     logGroupNames: ['/aws/vpc/test-flow-logs'],
     queryString: `
-      fields @timestamp, srcAddr, dstAddr, type
+      fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
       | filter action = "ACCEPT" and not(type like "ntm")
       | sort @timestamp desc
-      | limit 10`,
+      | limit 300`,
     startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     endTime: new Date(),
-    limit: 10,
+    limit: 300,
   })
 }
+
 function getResourceMap() {
   const resourceMap = new Map<string, AwsResource>([
-    ['172.31.42.86', { id: 'VPCID', type: 'VPC', name: 'The VPC' }],
+    ['172.31.38.213', { id: 'EC2ID', type: 'EC2', name: 'test ec2' }],
   ])
   return resourceMap
 }
@@ -115,13 +116,18 @@ export async function getVPCFlowLogs(): Promise<{
       const src = log.srcAddr
       const dst = log.dstAddr
 
-      // Check if the src IP exists in the map, otherwise add it
-      if (src && !resourceMap.has(src)) {
-        resourceMap.set(src, { id: src, type: 'IP', name: `Source ${src}` })
+      // Skip invalid entries
+      if (!src || !dst) return
+
+      if (!resourceMap.has(src)) {
+        resourceMap.set(src, {
+          id: src,
+          type: 'IP',
+          name: `Source ${src}`,
+        })
       }
 
-      // Check if the dst IP exists in the map, otherwise add it
-      if (dst && !resourceMap.has(dst)) {
+      if (!resourceMap.has(dst)) {
         resourceMap.set(dst, {
           id: dst,
           type: 'IP',
@@ -129,31 +135,31 @@ export async function getVPCFlowLogs(): Promise<{
         })
       }
 
-      // Retrieve the IDs for src and dst, ensuring they exist in the map
-      const dstID = resourceMap.get(dst)?.id || dst
+      // Get the source and destination IDs from the resource map
       const srcID = resourceMap.get(src)?.id || src
+      const dstID = resourceMap.get(dst)?.id || dst
 
-      // Record dependencies if both src and dst are available
-      if (src && dst) {
-        if (!dependencyMap.has(srcID)) {
-          dependencyMap.set(srcID, new Set())
-        }
+      if (!dependencyMap.has(srcID)) {
+        dependencyMap.set(srcID, new Set())
+      }
 
-        if (!dependencyMap.get(srcID)?.has(dstID)) {
-          dependencies.push({
-            from: srcID,
-            to: resourceMap.get(dst)?.id || dst,
-            relationship: 'connects to',
-          })
-          dependencyMap.get(srcID)?.add(dstID)
-        }
+      if (!dependencyMap.get(srcID)?.has(dstID)) {
+        dependencies.push({
+          from: srcID,
+          to: dstID,
+          relationship: 'connects to',
+        })
+        dependencyMap.get(srcID)?.add(dstID)
       }
     })
 
-    console.log(resourceMap)
-    console.log(dependencies)
+    console.log(`Total resources identified: ${resourceMap.size}`)
+    console.log(`Total dependencies: ${dependencies.length}`)
 
-    return { resources: Array.from(resourceMap.values()), dependencies }
+    return {
+      resources: Array.from(resourceMap.values()),
+      dependencies,
+    }
   } catch (error) {
     console.error('Error querying VPC Flow Logs:', error)
     return { resources: [], dependencies: [] }
