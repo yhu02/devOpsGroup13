@@ -32,7 +32,6 @@ interface AwsIpRanges {
   ipv6_prefixes: any[]
 }
 
-
 // AWS IP ranges official JSON URL
 const AWS_IP_RANGES_URL = 'https://ip-ranges.amazonaws.com/ip-ranges.json'
 
@@ -40,7 +39,7 @@ const AWS_IP_RANGES_URL = 'https://ip-ranges.amazonaws.com/ip-ranges.json'
 class AwsIpRangeManager {
   private static instance: AwsIpRangeManager
   private initialized: boolean = false
-  private ranges: { prefix: string, parsed: any }[] = []
+  private ranges: { prefix: string; parsed: any }[] = []
   private initPromise: Promise<void> | null = null
 
   private constructor() {}
@@ -67,17 +66,19 @@ class AwsIpRangeManager {
       if (!response.ok) {
         throw new Error(`Failed to fetch AWS IP ranges: ${response.statusText}`)
       }
-      
+
       const data: AwsIpRanges = await response.json()
-      
+
       // Parse and store IP ranges
-      this.ranges = data.prefixes.map(entry => ({
+      this.ranges = data.prefixes.map((entry) => ({
         prefix: entry.ip_prefix,
-        parsed: ipaddr.parseCIDR(entry.ip_prefix)
+        parsed: ipaddr.parseCIDR(entry.ip_prefix),
       }))
-      
+
       this.initialized = true
-      console.log(`Finishes parsing AWS Ranges Loaded ${this.ranges.length} IP ranges`)
+      console.log(
+        `Finishes parsing AWS Ranges Loaded ${this.ranges.length} IP ranges`
+      )
     } catch (error) {
       console.error('Error loading AWS IP ranges:', error)
       this.ranges = []
@@ -93,7 +94,7 @@ class AwsIpRangeManager {
 
     try {
       const parsedIp = ipaddr.parse(ip)
-      return this.ranges.some(range => {
+      return this.ranges.some((range) => {
         const [rangeIp, prefixLength] = range.parsed
         return parsedIp.match(rangeIp, prefixLength)
       })
@@ -184,8 +185,10 @@ const AWS_SERVICES_ID = 'aws-services'
 function getResourceMap() {
   const resourceMap = new Map<string, AwsResource>([
     ['172.31.38.213', { id: 'EC2ID', type: 'EC2', name: 'test ec2' }],
-    // Add AWS Services as a resource
-    [AWS_SERVICES_ID, { id: AWS_SERVICES_ID, type: 'AWS', name: 'AWS Services' }],
+    [
+      AWS_SERVICES_ID,
+      { id: AWS_SERVICES_ID, type: 'AWS', name: 'AWS Services' },
+    ],
   ])
   return resourceMap
 }
@@ -197,55 +200,54 @@ export async function getVPCFlowLogs(): Promise<{
   try {
     const awsIpChecker = AwsIpRangeManager.getInstance()
     await awsIpChecker.initialize()
-    
+
     const dnsResolver = DnsResolver.getInstance()
-    
+
     const logs = await createVpcFlowLogsQuery().run()
     const dependencies: Dependency[] = []
 
     const resourceMap = getResourceMap()
     const dependencyMap = new Map<string, Set<string>>()
-    
-    // Populate an IP set to process the ips in  batches
+
     const uniqueIps = new Set<string>()
-    logs.forEach(log => {
+    logs.forEach((log) => {
       if (log.srcAddr) uniqueIps.add(log.srcAddr)
       if (log.dstAddr) uniqueIps.add(log.dstAddr)
     })
-    
+
     // get DNS info for all non aws ips
     const dnsResolutionPromises: Promise<void>[] = []
     for (const ip of uniqueIps) {
       if (!awsIpChecker.isAwsIp(ip) && !resourceMap.has(ip)) {
         dnsResolutionPromises.push(
-          dnsResolver.resolveIp(ip)
-            .then(hostname => {
+          dnsResolver
+            .resolveIp(ip)
+            .then((hostname) => {
               if (!resourceMap.has(ip)) {
                 const name = dnsResolver.getResourceName(ip, hostname)
                 const type = hostname !== ip ? 'Domain' : 'IP'
                 resourceMap.set(ip, {
                   id: ip,
                   type,
-                  name
+                  name,
                 })
               }
             })
-            .catch(err => {
+            .catch((err) => {
               console.error(`Failed to resolve hostname for IP ${ip}:`, err)
               // fall back to just ips if the lookup failed
               if (!resourceMap.has(ip)) {
                 resourceMap.set(ip, {
                   id: ip,
                   type: 'IP',
-                  name: `IP ${ip}`
+                  name: `IP ${ip}`,
                 })
               }
             })
         )
       }
     }
-    
-    // Wait for all DNS resolution requests to complete
+
     await Promise.allSettled(dnsResolutionPromises)
     console.log(`Resolved hostnames for ${dnsResolutionPromises.length} IPs`)
 
@@ -256,14 +258,16 @@ export async function getVPCFlowLogs(): Promise<{
       // Skip invalid entries
       if (!src || !dst) return
 
-      // Determine if src is an AWS IP
+      // Determine if src\dst is an AWS IP
       const srcIsAwsIp = awsIpChecker.isAwsIp(src)
-      // Determine if dst is an AWS IP
       const dstIsAwsIp = awsIpChecker.isAwsIp(dst)
 
-      // Get the source and destination IDs from the resource map or use AWS_SERVICES_ID for AWS IPs
-      const srcID = srcIsAwsIp ? AWS_SERVICES_ID : (resourceMap.get(src)?.id || src)
-      const dstID = dstIsAwsIp ? AWS_SERVICES_ID : (resourceMap.get(dst)?.id || dst)
+      const srcID = srcIsAwsIp
+        ? AWS_SERVICES_ID
+        : resourceMap.get(src)?.id || src
+      const dstID = dstIsAwsIp
+        ? AWS_SERVICES_ID
+        : resourceMap.get(dst)?.id || dst
 
       // Skip self-dependencies
       if (srcID === dstID) return
