@@ -150,7 +150,7 @@ function Home() {
             improvedLayout: true,
             clusterThreshold: 150,
             hierarchical: {
-              enabled: true,
+              enabled: false,
               direction: 'UD',
               sortMethod: 'directed',
               levelSeparation: 150,
