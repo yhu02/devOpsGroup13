@@ -612,6 +612,7 @@ function createFargateServiceAndALB(
       recordType: ecs_patterns.ApplicationLoadBalancedServiceRecordType.NONE,
       listenerPort: loadBalancerPort,
       enableExecuteCommand: environment === 'tst',
+      assignPublicIp: true,
     },
   );
 
