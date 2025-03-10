@@ -1,5 +1,5 @@
-name: deploy-aws-batch-fargate
-description: Create a stack for AWS Batch jobs and Fargate containers
+name: deploy-aws-fargate
+description: Create a stack for Fargate containers
 author: dploy
 
 inputs:
