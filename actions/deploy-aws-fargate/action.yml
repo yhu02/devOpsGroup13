@@ -1,0 +1,667 @@
+name: deploy-aws-batch-fargate
+description: Create a stack for AWS Batch jobs and Fargate containers
+author: dploy
+
+inputs:
+  app-name:
+    description: The application name
+    required: true
+  app-type:
+    description: 'The type of app, only necessary for run images. Possible values: job, job-definition, shiny, shiny-task, streamlit, streamlit-task, fastapi or fastapi-task'
+  account-id:
+    description: The AWS account ID
+    required: true
+  region:
+    description: The AWS region
+    default: eu-central-1
+  image-version:
+    description: The version tag of the image
+    required: true
+  ecs-container-insights:
+    description: Enable container insights
+    default: 'false'
+  use-spot:
+    description: Whether or not to use Spot Instances
+    default: 'true'
+  ecs-circuit-breaker-rollback:
+    description: 'Whether to enable rollback on deployment failure. Default: true'
+    default: 'true'
+  otap:
+    description: The (custom) otap-environment in which the app will run, e.g. O, T, A or P, only necessary if use-efs is true
+  use-efs:
+    description: Does your application use an EFS share for in/output files?
+    default: 'false'
+  use-hana:
+    description: Does your application use HANA as datasource?
+    default: 'false'
+  use-bar:
+    description: Does your application use BAR as datasource?
+    default: 'false'
+  use-cdb:
+    description: Does your application use CDB as datasource?
+    default: 'false'
+  use-amb:
+    description: Does your application use Apex as datasource?
+    default: 'false'
+  use-apim:
+    description: Does your application use API management (APIM) as datasource?
+    default: 'false'
+  use-snowflake:
+    description: Does your application need to connect to Snowflake using oauth authentication?
+    default: 'false'
+  snowflake-host:
+    description: The Snowflake authentication endpoint
+    default: 'false'
+  expose-to-apim:
+    description: Expose the application to be accessible by API management (APIM)
+    default: 'false'
+  apim-host:
+    description: The APIM endpoint
+    default: api.alliander.com
+  extra-ssm-env-path:
+    description: The path to additional SSM parameters to include in the environment variables
+    default: ''
+  cdk-rollback-on-failure:
+    description: Rollback the CDK deployed stack in case of a failure
+    default: 'true'
+  container-port:
+    description: The (custom) container port.
+    default: '8080'
+  min-containers:
+    description: The minimum number of containers
+    default: '1'
+  max-containers:
+    description: The maximum number of containers
+    default: '1'
+  load-balancer-port:
+    description: The (custom) loadbalancer port.
+    default: '443'
+  auto-scaling-target-value:
+    description: The CPU% to autoscale at
+    default: '50'
+  reuse-alb:
+    description: Reuse a common ALB & Listener for multiple deployments
+    default: 'true'
+  ec2-alb-listener-rule-prio:
+    description: The ALB Listener Rule prio to use
+  target-group-health-check-path:
+    description: A string array representing the command that the container runs to determine if it is healthy. Do not forget to adjust the portnumber in the command.
+    default: Auto
+  target-group-health-check-interval:
+    description: The time period in seconds between each health check execution. You may specify between 5 and 300 seconds. The default value is 30 seconds. Health check interval must be bigger than the timeout.
+    default: '30'
+  target-group-health-check-timeout:
+    description: The time period in seconds to wait for a health check to succeed before it is considered a failure. You may specify between 2 and 60 seconds. The default value is 5. Health check timeout must be smaller than the interval.
+    default: '5'
+  ecs-health-check-grace-period:
+    description: The period of time, in seconds, that the Amazon ECS service scheduler ignores unhealthy Elastic Load Balancing target health checks after a task has first started. You can specify between 0 and 300 seconds. By default, the startPeriod is off (0).
+    default: '0'
+  container-health-check-cmd:
+    description: A string array representing the command that the container runs to determine if it is healthy. Do not forget to adjust the portnumber in the command.
+    default: Auto
+  container-health-check-interval:
+    description: The time period in seconds between each health check execution. You may specify between 5 and 300 seconds. The default value is 30 seconds. Health check interval must be bigger than the timeout.
+    default: '30'
+  container-health-check-timeout:
+    description: The time period in seconds to wait for a health check to succeed before it is considered a failure. You may specify between 2 and 60 seconds. The default value is 5. Health check timeout must be smaller than the interval.
+    default: '5'
+  container-health-check-retries:
+    description: The number of times to retry a failed health check before the container is considered unhealthy. You may specify between 1 and 10 retries. The default value is 3.
+    default: '3'
+  container-health-check-start-period:
+    description: The optional grace period to provide containers time to bootstrap before failed health checks count towards the maximum number of retries. You can specify between 0 and 300 seconds. By default, the startPeriod is off (0).
+    default: '0'
+  ecs-ephemeral-storage:
+    description: The amount of ephemeral storage to allocate to the task. This parameter is used to specify the amount of ephemeral storage to allocate for the task. The ephemeral storage is used for task storage. The default value is 21 GiB.
+    default: 'Auto'
+  cpu:
+    description: cpu
+    required: true
+  memory:
+    description: memory
+    required: true
+  main-entrypoint:
+    description: The main entrypoint of the application
+    default: 'run_application -m default'
+  task-entrypoint:
+    description: The task entrypoint of the application
+    default: 'run_application -m job -j default'
+  main-run-command:
+    description: The main run command
+    default: '["run_application"]'
+  main-run-args:
+    description: The main run arguments
+    default: '["-m", "default"]'
+  task-run-command:
+    description: The task run command
+    default: '["run_application"]'
+  task-run-args:
+    description: The task run arguments
+    default: '["-m", "job", "-j", "default"]'
+  script-name:
+    description: The script to be run
+    default: Auto
+  environment:
+    description: environment
+    required: true
+  job-schedule:
+    description: job-schedule
+    default: ''
+  job-notification-topic:
+    description: job-notification-topic
+    default: ''
+  verbose-output:
+    description: Use verbose output
+    default: 'false'
+  rds-security-group-id:
+    description: The security group id of the RDS instance
+    default: ''
+  rds-db-name:
+    description: The name of the RDS database
+    default: ''
+  cdk-bootstrap:
+    description: Whether to bootstrap the CDK environment
+    default: 'true'
+  task-role-arn:
+    description: The ARN of the task role
+    default: ''
+  sts-client-id:
+    description: The client id of the STS service
+    default: ''
+  s3-application-data-bucket-arn:
+    description: The ARN of the S3 bucket
+    default: ''
+
+outputs:
+  task-role-arn:
+    description: The ARN of the task role
+    value: ${{ steps.cdk-deploy.outputs.task-role-arn }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Pre-flight check non-empty inputs
+      shell: bash
+      run: | # shell
+        # Checking if required inputs are not empty
+        declare -A inputs=(
+          ["app-name"]="${{ inputs.app-name }}"
+          ["account-id"]="${{ inputs.account-id }}"
+          ["region"]="${{ inputs.region }}"
+          ["image-version"]="${{ inputs.image-version }}"
+          ["ecs-capacity-provider"]="${{ inputs.ecs-capacity-provider }}"
+          ["ecs-container-insights"]="${{ inputs.ecs-container-insights }}"
+          ["use-spot"]="${{ inputs.use-spot }}"
+          ["ecs-circuit-breaker-rollback"]="${{ inputs.ecs-circuit-breaker-rollback }}"
+          ["use-efs"]="${{ inputs.use-efs }}"
+          ["use-hana"]="${{ inputs.use-hana }}"
+          ["use-bar"]="${{ inputs.use-bar }}"
+          ["use-cdb"]="${{ inputs.use-cdb }}"
+          ["use-amb"]="${{ inputs.use-amb }}"
+          ["use-apim"]="${{ inputs.use-apim }}"
+          ["use-snowflake"]="${{ inputs.use-snowflake }}"
+          ["snowflake-host"]="${{ inputs.snowflake-host }}"
+          ["expose-to-apim"]="${{ inputs.expose-to-apim }}"
+          ["apim-host"]="${{ inputs.apim-host }}"
+          ["cdk-rollback-on-failure"]="${{ inputs.cdk-rollback-on-failure }}"
+          ["min-containers"]="${{ inputs.min-containers }}"
+          ["max-containers"]="${{ inputs.max-containers }}"
+          ["load-balancer-port"]="${{ inputs.load-balancer-port }}"
+          ["auto-scaling-target-value"]="${{ inputs.auto-scaling-target-value }}"
+          ["reuse-alb"]="${{ inputs.reuse-alb }}"
+          ["target-group-health-check-path"]="${{ inputs.target-group-health-check-path }}"
+          ["target-group-health-check-interval"]="${{ inputs.target-group-health-check-interval }}"
+          ["target-group-health-check-timeout"]="${{ inputs.target-group-health-check-timeout }}"
+          ["ecs-health-check-grace-period"]="${{ inputs.ecs-health-check-grace-period }}"
+          ["container-health-check-cmd"]="${{ inputs.container-health-check-cmd }}"
+          ["container-health-check-interval"]="${{ inputs.container-health-check-interval }}"
+          ["container-health-check-timeout"]="${{ inputs.container-health-check-timeout }}"
+          ["container-health-check-retries"]="${{ inputs.container-health-check-retries }}"
+          ["container-health-check-start-period"]="${{ inputs.container-health-check-start-period }}"
+          ["ecs-ephemeral-storage"]="${{ inputs.ecs-ephemeral-storage }}"
+          ["cpu"]="${{ inputs.cpu }}"
+          ["memory"]="${{ inputs.memory }}"
+          ["script-name"]="${{ inputs.script-name }}"
+          ["environment"]="${{ inputs.environment }}"
+          ["verbose-output"]="${{ inputs.verbose-output }}"
+          ["cdk-bootstrap"]="${{ inputs.cdk-bootstrap }}"
+        )
+
+        # Check each input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[${input}]}"
+          if [ -z "${value}" ]; then
+            echo "::error::'${input}' is empty"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check boolean inputs
+      shell: bash
+      run: | # shell
+        # Checking if boolean inputs are 'true' or 'false'
+        declare -A inputs=(
+          ["use-spot"]="${{ inputs.use-spot }}"
+          ["ecs-container-insights"]="${{ inputs.ecs-container-insights }}"
+          ["ecs-circuit-breaker-rollback"]="${{ inputs.ecs-circuit-breaker-rollback }}"
+          ["use-efs"]="${{ inputs.use-efs }}"
+          ["use-hana"]="${{ inputs.use-hana }}"
+          ["use-bar"]="${{ inputs.use-bar }}"
+          ["use-cdb"]="${{ inputs.use-cdb }}"
+          ["use-amb"]="${{ inputs.use-amb }}"
+          ["use-apim"]="${{ inputs.use-apim }}"
+          ["use-snowflake"]="${{ inputs.use-snowflake }}"
+          ["expose-to-apim"]="${{ inputs.expose-to-apim }}"
+          ["cdk-rollback-on-failure"]="${{ inputs.cdk-rollback-on-failure }}"
+          ["reuse-alb"]="${{ inputs.reuse-alb }}"
+          ["cdk-bootstrap"]="${{ inputs.cdk-bootstrap }}"
+          ["verbose-output"]="${{ inputs.verbose-output }}"
+        )
+
+        # Iterate over each boolean input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[${input}]}"
+          if [[ "${value}" != "true" && "${value}" != "false" ]]; then
+            echo "::error::'${input}' must be 'true' or 'false'"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check list of values inputs
+      shell: bash
+      run: | # shell
+        # Checking if inputs are in a list of valid values
+        declare -A inputs=(
+          ["region"]="${{ inputs.region }}"
+          ["region_VALID_VALUES"]="eu-central-1"
+          ["ecs-capacity-provider"]="${{ inputs.ecs-capacity-provider }}"
+          ["ecs-capacity-provider_VALID_VALUES"]="FARGATE, EC2"
+          ["app-type"]="${{ inputs.app-type }}"
+          ["app-type_VALID_VALUES"]="dash, dash-task,\
+                                     fastapi, fastapi-task,\
+                                     frontend,\
+                                     job, job-definition,\
+                                     shiny, shiny-task,\
+                                     streamlit, streamlit-task,\
+                                     task-definition"
+          ["otap"]="${{ inputs.otap }}"
+          ["otap_VALID_VALUES"]="O, T, A, P"
+        )
+
+        # Check if the input is in the list of valid values
+        for input in "${!inputs[@]}"; do
+          # Skip the valid values entries
+          if [[ "${input}" == *_VALID_VALUES ]]; then
+            continue
+          fi
+
+          value="${inputs[${input}]}"
+          valid_values="${inputs[${input}_VALID_VALUES]}"
+          if [[ ! "$valid_values" =~ "${value}" ]]; then
+            echo "::error::'${input}' must be one of the following values: ${valid_values}, you specified ${value}"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check git repository
+      shell: bash
+      run: | # shell
+        if ! git branch 2> /dev/null; then
+          echo "::error::Not in a git repository. Exiting.."
+          exit 1
+        fi
+
+    - name: Pre-flight checks
+      id: pre-flight
+      shell: bash
+      run: |
+        if [[ "${{ inputs.s3-application-data-bucket-arn }}" == "" || "${{ inputs.s3-application-data-bucket-arn }}" == "null" ]]
+        then
+          echo "s3-application-data-bucket-arn=" >> ${GITHUB_OUTPUT}
+        elif [[ "${{ inputs.s3-application-data-bucket-arn }}" != "arn:"* ]]
+        then
+          echo "::error::The provided s3-application-data-bucket-arn is not a valid ARN"
+          exit 1
+        else
+          echo "s3-application-data-bucket-arn=${{ inputs.s3-application-data-bucket-arn }}" >> ${GITHUB_OUTPUT}
+        fi
+
+    - name: Set up Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        always-auth: true
+        node-version: 20.x
+        registry-url: https://npm.pkg.github.com
+        scope: "@alliander"
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.region }}
+        role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/gh-actions-${{ github.event.repository.name }}
+        role-session-name: GitHubActions
+
+    - name: Install CDK globally and install projects dependencies
+      shell: bash
+      run: |
+        npm i -g aws-cdk ts-node
+        cdk --version
+        cd ${GITHUB_ACTION_PATH}
+
+        #emulate npm ci https://github.com/aws/aws-pdk/issues/755
+        rm -rf node_modules; npm install --no-save
+
+    - name: CDK bootstrap
+      id: bootstrap
+      if: ${{ inputs.cdk-bootstrap == 'true' }}
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        echo "Bootstrapping environment"
+        cdk bootstrap --app "" aws://${{ inputs.account-id }}/${{ inputs.region }} \
+          --context stackName="Bootstrap"
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+      with:
+        registries: ${{ inputs.account-id }}
+
+    - name: Retrieve configured environment variables
+      id: get-env-vars
+      shell: bash
+      run: |
+        ssm_env_variables=$(aws ssm get-parameters-by-path \
+              --path /application/v1/${{ inputs.app-name }}/environment \
+              --output text \
+              --query 'Parameters[].Name' \
+              --no-paginate)
+
+        # Add extra environment variables to the list
+        if [[ "${{ inputs.extra-ssm-env-path }}" != "" ]]
+        then
+          extra_ssm_env_variables+=$(aws ssm get-parameters-by-path \
+              --path ${{ inputs.extra-ssm-env-path }} \
+              --output text \
+              --query 'Parameters[].Name' \
+              --no-paginate)
+        fi
+
+        if [[ "$extra_ssm_env_variables" != "" ]]
+        then
+          if [[ "$ssm_env_variables" != "" ]]
+          then
+            ssm_env_variables="$ssm_env_variables;$extra_ssm_env_variables"
+          else
+            ssm_env_variables="$extra_ssm_env_variables"
+          fi
+        fi
+
+        # Replace tabs with semicolons
+        ssm_env_variables=${ssm_env_variables//$'\t'/;}
+
+        echo "env_variables=$ssm_env_variables" >> ${GITHUB_OUTPUT}
+
+    - name: Determine target group health check path
+      id: health-check-path
+      shell: bash
+      run: |
+        if [[ "${{ inputs.target-group-health-check-path }}" == "Auto" ]]
+        then
+          case ${{ inputs.app-type }} in
+            streamlit | streamlit-task)
+              echo "target-group-health-check-path=/_stcore/health" >> ${GITHUB_OUTPUT}
+            ;;
+            fastapi | fastapi-task)
+              echo "target-group-health-check-path=/health" >> ${GITHUB_OUTPUT}
+            ;;
+            frontend)
+              echo "target-group-health-check-path=/health" >> ${GITHUB_OUTPUT}
+            ;;
+            *)
+              echo "target-group-health-check-path=/index.html" >> ${GITHUB_OUTPUT}
+            ;;
+          esac
+        else
+          echo "target-group-health-check-path=${{ inputs.target-group-health-check-path }}" >> ${GITHUB_OUTPUT}
+        fi
+
+    - name: Setup task-definition parameters
+      id: health-check-cmd
+      shell: bash
+      run: |
+        if [[ "${{ inputs.container-health-check-cmd }}" == "Auto" ]]
+        then
+          echo "container-health-check-cmd=curl -f http://localhost:${{ inputs.container-port }}${{ steps.health-check-path.outputs.target-group-health-check-path }} || exit 1" >> ${GITHUB_OUTPUT}
+        else
+          echo "container-health-check-cmd=${{ inputs.targetGroupHealthCheckCmd }}" >> ${GITHUB_OUTPUT}
+        fi
+
+    - name: Set ephemeral storage
+      id: ephemeral-storage
+      shell: bash
+      run: | # shell
+        if [[ "${{ inputs.ecs-ephemeral-storage }}" == "Auto" ]]
+        then
+          if [[ "${{ inputs.app-type }}" == "shiny"* ]]
+          then
+            echo "ecs-ephemeral-storage=30" >> ${GITHUB_OUTPUT}
+          else
+            echo "ecs-ephemeral-storage=21" >> ${GITHUB_OUTPUT}
+          fi
+        else
+          echo "ecs-ephemeral-storage=${{ inputs.ecs-ephemeral-storage }}" >> ${GITHUB_OUTPUT}
+        fi
+
+    - name: Set CloudFormation stackname
+      id: set-stack-name
+      shell: bash
+      run: |
+        stackName=${{ inputs.app-name }}
+        if [[ "${{ inputs.app-type }}" == "task-definition" ]]
+        then
+          if [[ "${{ inputs.script-name }}" == "Auto" ]]
+          then
+            echo "::error:: For an extra Fargate scheduled task, you need to specify the script-name parameter"
+            exit 1
+          else
+            echo "stack-name=${{ inputs.app-name }}-${{ inputs.script-name }}" >> ${GITHUB_OUTPUT}
+          fi
+        else
+          echo "stack-name=${{ inputs.app-name }}" >> ${GITHUB_OUTPUT}
+        fi
+
+    - name: Create Entrypoint command
+      shell: bash
+      id: create-entrypoint
+      run: |
+        # Check if main-run-command is set
+        if [[ -n '${{ inputs.main-run-command }}' ]]; then
+          # Convert inputs to JSON format in Bash
+          MAIN_RUN_COMMAND=$(echo '${{ inputs.main-run-command }}' | jq -c '.')
+          MAIN_RUN_ARGS=$(echo '${{ inputs.main-run-args }}' | jq -c '.')
+
+          # Build JSON structure for MAIN_ENTRYPOINT
+          MAIN_ENTRYPOINT=$(echo "{
+            \"command\": ${MAIN_RUN_COMMAND},
+            \"args\": ${MAIN_RUN_ARGS}
+          }" | jq -c '[.command[]] + [.args[]]')
+
+          # Flatten JSON array to a space-separated string
+          MAIN_ENTRYPOINT=$(echo "${MAIN_ENTRYPOINT}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
+          echo "main-entrypoint=${MAIN_ENTRYPOINT}" >> "${GITHUB_OUTPUT}"
+        else
+          # Use fallback value if main-run-command is not set
+          echo "main-entrypoint=${{ inputs.main-entrypoint }}" >> "${GITHUB_OUTPUT}"
+        fi
+
+        # Check if task-run-command is set
+        if [[ -n '${{ inputs.task-run-command }}' ]]; then
+          # Convert inputs to JSON format in Bash
+          TASK_RUN_COMMAND=$(echo '${{ inputs.task-run-command }}' | jq -c '.')
+          TASK_RUN_ARGS=$(echo '${{ inputs.task-run-args }}' | jq -c '.')
+
+          # Build JSON structure for TASK_ENTRYPOINT
+          TASK_ENTRYPOINT=$(echo "{
+            \"command\": ${TASK_RUN_COMMAND},
+            \"args\": ${TASK_RUN_ARGS}
+          }" | jq -c '[.command[]] + [.args[]]')
+
+          # Flatten JSON array to a space-separated string
+          TASK_ENTRYPOINT=$(echo "${TASK_ENTRYPOINT}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
+          echo "task-entrypoint=${TASK_ENTRYPOINT}" >> "${GITHUB_OUTPUT}"
+        else
+          # Use fallback value if task-run-command is not set
+          echo "task-entrypoint=${{ inputs.task-entrypoint }}" >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: CDK diff
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        cdk diff \
+          --context stackName="${{ steps.set-stack-name.outputs.stack-name }}" \
+          --context appName="${{ inputs.app-name }}" \
+          --context appType="${{ inputs.app-type }}" \
+          --context baseImagesAccountId="${{ env.BASE_IMAGES_ACCOUNT_ID }}" \
+          --context ecsContainerInsights="${{ inputs.ecs-container-insights }}" \
+          --context useSpot="${{ inputs.use-spot }}" \
+          --context ecsCircuitBreakerRollback="${{ inputs.ecs-circuit-breaker-rollback }}" \
+          --context containerPort="${{ inputs.container-port }}" \
+          --context minContainers="${{ inputs.min-containers }}" \
+          --context maxContainers="${{ inputs.max-containers }}" \
+          --context reuseALB="${{ inputs.reuse-alb }}" \
+          --context ec2ALBListenerRulePrio="${{ inputs.ec2-alb-listener-rule-prio }}" \
+          --context targetGroupHealthCheckPath="${{ steps.health-check-path.outputs.target-group-health-check-path }}" \
+          --context targetGroupHealthCheckInterval="${{ inputs.target-group-health-check-interval }}" \
+          --context targetGroupHealthCheckTimeout="${{ inputs.target-group-health-check-timeout }}" \
+          --context ecsHealthCheckGracePeriod="${{ inputs.ecs-health-check-grace-period }}" \
+          --context containerHealthCheckCmd="${{ steps.health-check-cmd.outputs.container-health-check-cmd }}" \
+          --context containerHealthCheckInterval="${{ inputs.container-health-check-interval }}" \
+          --context containerHealthCheckTimeout="${{ inputs.container-health-check-timeout }}" \
+          --context containerHealthCheckRetries="${{ inputs.container-health-check-retries }}" \
+          --context containerHealthCheckStartPeriod="${{ inputs.container-health-check-start-period }}" \
+          --context loadBalancerPort="${{ inputs.load-balancer-port }}" \
+          --context asgTargetValue="${{ inputs.auto-scaling-target-value }}" \
+          --context useHANA="${{ inputs.use-hana }}" \
+          --context useBAR="${{ inputs.use-bar }}" \
+          --context useCDB="${{ inputs.use-cdb }}" \
+          --context useAMB="${{ inputs.use-amb }}" \
+          --context useAPIM="${{ inputs.use-apim }}" \
+          --context useSnowflake="${{ inputs.use-snowflake }}" \
+          --context snowflakeHost="${{ inputs.snowflake-host }}" \
+          --context expose2APIM="${{ inputs.expose-to-apim }}" \
+          --context apimHost="${{ inputs.apim-host }}" \
+          --context ecsEphemeralStorage="${{ steps.ephemeral-storage.outputs.ecs-ephemeral-storage }}" \
+          --context cpu="${{ inputs.cpu }}" \
+          --context memory="${{ inputs.memory }}" \
+          --context environment="${{ inputs.environment }}" \
+          --context otap="${{ inputs.otap }}" \
+          --context environmentVariables="${{ steps.get-env-vars.outputs.env_variables }}" \
+          --context useEFS="${{ inputs.use-efs }}" \
+          --context version="${{ inputs.image-version }}.${{ github.run_id }}" \
+          --context jobSchedule="${{ inputs.job-schedule }}" \
+          --context jobNotificationTopic="${{ inputs.job-notification-topic }}" \
+          --context mainEntrypoint="${{ steps.create-entrypoint.outputs.main-entrypoint }}" \
+          --context taskEntrypoint="${{ steps.create-entrypoint.outputs.task-entrypoint }}" \
+          --context verboseOutput="${{ inputs.verbose-output }}" \
+          --context rdsSecurityGroupId="${{ inputs.rds-security-group-id }}" \
+          --context rdsDbName="${{ inputs.rds-db-name }}" \
+          --context branch="${{ github.ref }}" \
+          --context repo="${{ github.repository }}" \
+          --context commitSha="${{ github.sha }}" \
+          --context taskRoleArn="${{ inputs.task-role-arn }}" \
+          --context stsClientId="${{ inputs.sts-client-id }}" \
+          --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}"
+
+
+    - name: CDK deployment
+      id: cdk-deploy
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        cdk deploy \
+          $(if [ "${{ inputs.cdk-rollback-on-failure }}" == "false" ]; then echo "--no-rollback"; fi) \
+          -O CfnOutput.json \
+          --context stackName="${{ steps.set-stack-name.outputs.stack-name }}" \
+          --context appName="${{ inputs.app-name }}" \
+          --context appType="${{ inputs.app-type }}" \
+          --context baseImagesAccountId="${{ env.BASE_IMAGES_ACCOUNT_ID }}" \
+          --context ecsContainerInsights="${{ inputs.ecs-container-insights }}" \
+          --context useSpot="${{ inputs.use-spot }}" \
+          --context ecsCircuitBreakerRollback="${{ inputs.ecs-circuit-breaker-rollback }}" \
+          --context containerPort="${{ inputs.container-port }}" \
+          --context minContainers="${{ inputs.min-containers }}" \
+          --context maxContainers="${{ inputs.max-containers }}" \
+          --context reuseALB="${{ inputs.reuse-alb }}" \
+          --context ec2ALBListenerRulePrio="${{ inputs.ec2-alb-listener-rule-prio }}" \
+          --context targetGroupHealthCheckPath="${{ steps.health-check-path.outputs.target-group-health-check-path }}" \
+          --context targetGroupHealthCheckInterval="${{ inputs.target-group-health-check-interval }}" \
+          --context targetGroupHealthCheckTimeout="${{ inputs.target-group-health-check-timeout }}" \
+          --context ecsHealthCheckGracePeriod="${{ inputs.ecs-health-check-grace-period }}" \
+          --context containerHealthCheckCmd="${{ steps.health-check-cmd.outputs.container-health-check-cmd }}" \
+          --context containerHealthCheckInterval="${{ inputs.container-health-check-interval }}" \
+          --context containerHealthCheckTimeout="${{ inputs.container-health-check-timeout }}" \
+          --context containerHealthCheckRetries="${{ inputs.container-health-check-retries }}" \
+          --context containerHealthCheckStartPeriod="${{ inputs.container-health-check-start-period }}" \
+          --context loadBalancerPort="${{ inputs.load-balancer-port }}" \
+          --context asgTargetValue="${{ inputs.auto-scaling-target-value }}" \
+          --context useHANA="${{ inputs.use-hana }}" \
+          --context useBAR="${{ inputs.use-bar }}" \
+          --context useCDB="${{ inputs.use-cdb }}" \
+          --context useAMB="${{ inputs.use-amb }}" \
+          --context useAPIM="${{ inputs.use-apim }}" \
+          --context useSnowflake="${{ inputs.use-snowflake }}" \
+          --context snowflakeHost="${{ inputs.snowflake-host }}" \
+          --context expose2APIM="${{ inputs.expose-to-apim }}" \
+          --context apimHost="${{ inputs.apim-host }}" \
+          --context ecsEphemeralStorage="${{ steps.ephemeral-storage.outputs.ecs-ephemeral-storage }}" \
+          --context cpu="${{ inputs.cpu }}" \
+          --context memory="${{ inputs.memory }}" \
+          --context environment="${{ inputs.environment }}" \
+          --context otap="${{ inputs.otap }}" \
+          --context environmentVariables="${{ steps.get-env-vars.outputs.env_variables }}" \
+          --context useEFS="${{ inputs.use-efs }}" \
+          --context version="${{ inputs.image-version }}.${{ github.run_id }}" \
+          --context jobSchedule="${{ inputs.job-schedule }}" \
+          --context jobNotificationTopic="${{ inputs.job-notification-topic }}" \
+          --context mainEntrypoint="${{ steps.create-entrypoint.outputs.main-entrypoint }}" \
+          --context taskEntrypoint="${{ steps.create-entrypoint.outputs.task-entrypoint }}" \
+          --context verboseOutput="${{ inputs.verbose-output }}" \
+          --context rdsSecurityGroupId="${{ inputs.rds-security-group-id }}" \
+          --context rdsDbName="${{ inputs.rds-db-name }}" \
+          --context branch="${{ github.ref }}" \
+          --context repo="${{ github.repository }}" \
+          --context commitSha="${{ github.sha }}" \
+          --context taskRoleArn="${{ inputs.task-role-arn }}" \
+          --context stsClientId="${{ inputs.sts-client-id }}" \
+          --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}"
+
+        cat CfnOutput.json
+
+        # Extract the stack name from the context
+        STACK_NAME="${{ steps.set-stack-name.outputs.stack-name }}"
+
+        TASK_ROLE_ARN=$(jq -r --arg STACK_NAME "$STACK_NAME" '.[$STACK_NAME].TaskRoleArn' CfnOutput.json)
+        APIM_SIDECAR=$(jq -r --arg STACK_NAME "$STACK_NAME" '.[$STACK_NAME].apimSidecar // ""' CfnOutput.json)
+        SNOWFLAKE_SIDECAR=$(jq -r --arg STACK_NAME "$STACK_NAME" '.[$STACK_NAME].snowflakeSidecar // ""' CfnOutput.json)
+
+        echo "task-role-arn=$TASK_ROLE_ARN" >> ${GITHUB_OUTPUT}
+        echo "apim-sidecar=$APIM_SIDECAR" >> ${GITHUB_OUTPUT}
+        echo "snowflake-sidecar=$SNOWFLAKE_SIDECAR" >> ${GITHUB_OUTPUT}
+        echo "endPointURL=`jq -r '.\"${{ inputs.app-name }}\".\"EndPointURL\"' CfnOutput.json`" >> ${GITHUB_OUTPUT}
+
+    - name: Upload diagram artifact
+      id: upload-artifact
+      uses: Alliander/publish-workflow-cdk-graph-diagram@main
+      with:
+        artifact-name: Batch-Fargate-Diagram
+        root-dir: ${{ github.action_path }}
+
+    - name: Deploy summary
+      shell: bash
+      run: |
+        echo "### :heart_eyes: Deployment was successful in account ${{ inputs.account-id }}" >> ${GITHUB_STEP_SUMMARY}
+        echo "" >> ${GITHUB_STEP_SUMMARY}
+        echo "- Your endpoint URL is ${{ steps.cdk-deploy.outputs.endPointURL }}" >> ${GITHUB_STEP_SUMMARY}
+        echo "- APIM sidecar: ${{ steps.cdk-deploy.outputs.apim-sidecar }}" >> ${GITHUB_STEP_SUMMARY}
+        echo "- Snowflake sidecar: ${{ steps.cdk-deploy.outputs.snowflake-sidecar }}" >> ${GITHUB_STEP_SUMMARY}
