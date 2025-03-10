@@ -129,3 +129,5 @@ jobs:
           account-id: ${{ steps.set.outputs.account-id }}
           region: ${{ steps.set.outputs.region }}
           environment: ${{ steps.set.outputs.environment }}
+          cpu: ${{ steps.set.outputs.cpu }}
+          memory: ${{ steps.set.outputs.memory }}
