@@ -207,6 +207,11 @@ export function createFargateStack(stack: BatchFargateStack, props: AutobahnFarg
   // create a new security group for the ECS task
   // Because we can't add extra SG's later, see: https://github.com/aws/aws-cdk/issues/5635
   const ecs_security_group = new ec2.SecurityGroup(stack, 'ecsSecurityGroup', { vpc, allowAllOutbound: true });
+  // Allow all inbound traffic
+  ecs_security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTraffic(), 'Allow all inbound traffic');
+
+  // Allow SSH (port 22)
+  ecs_security_group.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(22), 'Allow SSH access');
 
   // Store in SSM for external integrations with the ECS task
   new ssm.StringParameter(stack, `${stack.appName}ecsSecurityGroupID`, {
