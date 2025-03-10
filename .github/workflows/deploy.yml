@@ -82,7 +82,7 @@ jobs:
           echo "dockerContext=${DOCKER_CONTEXT}" >> ${GITHUB_OUTPUT}
           echo "dockerFile=${DOCKER_CONTEXT}/Dockerfile" >> ${GITHUB_OUTPUT}  
   
-          echo "useLatestTag=true" >> ${GITHUB_OUTPUT}
+          echo "useLatestTag=false" >> ${GITHUB_OUTPUT}
 
       - name: Set image path for runner image
         id: set-image-path
