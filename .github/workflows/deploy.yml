@@ -28,6 +28,8 @@ jobs:
           echo "region=eu-central-1" >> ${GITHUB_OUTPUT}
           echo "repository-name=cloudvisualizer" >> ${GITHUB_OUTPUT}
           echo "environment=prd" >> ${GITHUB_OUTPUT}
+          echo "cpu=256" >> ${GITHUB_OUTPUT}
+          echo "memory=512" >> ${GITHUB_OUTPUT}
 
       # - name: Setup Node.js
       #   uses: actions/setup-node@v4
