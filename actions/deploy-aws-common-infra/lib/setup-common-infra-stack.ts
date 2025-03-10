@@ -1,5 +1,4 @@
 import * as cdk from 'aws-cdk-lib';
-import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
@@ -11,8 +10,6 @@ export class SetupCommonInfraStack extends cdk.Stack {
 
     const vpc = ec2.Vpc.fromLookup(this, 'VPC', { vpcId: ssm.StringParameter.valueFromLookup(this, '/platform/v1/vpc/id') });
 
-    const certificate = certificatemanager.Certificate.fromCertificateArn(this, 'ALBCertificate', '{{resolve:ssm:/platform/v1/dns/public/wildcard_cert_arn_eu-central-1}}');
-
     const alb = new elbv2.ApplicationLoadBalancer(this, 'CommonALB', {
       vpc: vpc,
       deletionProtection: true,
@@ -22,7 +19,6 @@ export class SetupCommonInfraStack extends cdk.Stack {
 
     const applicationListener = alb.addListener('CommonALBListener', {
       port: 443,
-      certificates: [certificate],
       defaultAction: elbv2.ListenerAction.fixedResponse(503, { contentType: 'text/plain' }),
       open: true,
     });

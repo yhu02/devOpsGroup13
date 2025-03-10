@@ -1,5 +1,4 @@
 import * as cdk from 'aws-cdk-lib';
-import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
@@ -575,7 +574,6 @@ function createFargateServiceAndALB(
   environment: string,
   rdsSecurityGroup?: cdk.aws_ec2.ISecurityGroup,
 ) {
-  const certificate = getWildcardCertificateFromCertificateArn(stack);
   const useSpot = stack.getBooleanFromContext('useSpot');
   const ecsCapacityProviderFargate = useSpot ? 'FARGATE_SPOT' : 'FARGATE';
   const vpc = ec2.Vpc.fromLookup(stack, 'AllianderVPC', {
@@ -606,7 +604,6 @@ function createFargateServiceAndALB(
       cluster: ecsCluster,
       taskSubnets: privateSubnets,
       capacityProviderStrategies: [{ capacityProvider: ecsCapacityProviderFargate, weight: 1 }],
-      certificate,
       domainName: `${stack.appName}-alb`,
       domainZone: hostedZone,
       recordType: ecs_patterns.ApplicationLoadBalancedServiceRecordType.NONE,
@@ -692,13 +689,6 @@ function getReusableALBListener(stack: BatchFargateStack) {
   });
 }
 
-function getWildcardCertificateFromCertificateArn(stack: BatchFargateStack) {
-  return certificatemanager.Certificate.fromCertificateArn(
-    stack,
-    'ALBCertificate',
-    '{{resolve:ssm:/platform/v1/dns/public/wildcard_cert_arn_eu-central-1}}',
-  );
-}
 
 function createExternalIntegrationSecrets(
   stack: BatchFargateStack,
