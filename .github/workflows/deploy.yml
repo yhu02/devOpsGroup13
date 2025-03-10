@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set outputs
-        id: set-outputs
+        id: set
         run: |
           echo "app-name=cloudvisualizer" >> ${GITHUB_OUTPUT}
           echo "app-type=frontend" >> ${GITHUB_OUTPUT}
