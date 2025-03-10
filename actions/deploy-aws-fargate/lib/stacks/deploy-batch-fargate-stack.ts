@@ -85,6 +85,7 @@ export class BatchFargateStack extends cdk.Stack {
         taskRoleArn: this.getStringFromContext('taskRoleArn'),
         stsClientId: this.getStringFromContext('stsClientId'),
         s3ApplicationDataBucketArn: this.getStringFromContext('s3ApplicationDataBucketArn'),
+        repositoryName: this.getStringFromContext('repositoryName'),
       });
       return;
     }
