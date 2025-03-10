@@ -18,7 +18,7 @@ export class SetupCommonInfraStack extends cdk.Stack {
     });
 
     const applicationListener = alb.addListener('CommonALBListener', {
-      port: 443,
+      port: 80,
       defaultAction: elbv2.ListenerAction.fixedResponse(503, { contentType: 'text/plain' }),
       open: true,
     });
