@@ -120,19 +120,19 @@ jobs:
       #     tags: ${{ steps.meta.outputs.tags }}
       #     labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Setup common AWS infrastructure
-        id: setup-common-infra
-        uses: ./actions/deploy-aws-common-infra
-        with:
-          app-name: ${{ steps.set.outputs.app-name }}
-          app-type: ${{ steps.set.outputs.app-type }}
-          account-id: ${{ steps.set.outputs.account-id }}
-          region: ${{ steps.set.outputs.region }}
-          reuse-alb: false
-          use-efs: false
-          efs-file-system-name: ApplicationData
-          immutable-tags: true
-          cdk-bootstrap: false
+      # - name: Setup common AWS infrastructure
+      #   id: setup-common-infra
+      #   uses: ./actions/deploy-aws-common-infra
+      #   with:
+      #     app-name: ${{ steps.set.outputs.app-name }}
+      #     app-type: ${{ steps.set.outputs.app-type }}
+      #     account-id: ${{ steps.set.outputs.account-id }}
+      #     region: ${{ steps.set.outputs.region }}
+      #     reuse-alb: false
+      #     use-efs: false
+      #     efs-file-system-name: ApplicationData
+      #     immutable-tags: true
+      #     cdk-bootstrap: false
 
       - name: Deploy AWS fargate
         id: deploy-fargate
@@ -147,3 +147,4 @@ jobs:
           cpu: ${{ steps.set.outputs.cpu }}
           memory: ${{ steps.set.outputs.memory }}
           image-version: ${{ steps.set.outputs.image-version }}
+          repository-name: ${{ steps.set.outputs.repository-name }}

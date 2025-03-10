@@ -72,6 +72,7 @@ interface AutobahnFargateProps {
   taskRoleArn: string;
   stsClientId: string;
   s3ApplicationDataBucketArn: string;
+  repositoryName: string;
 }
 
 export function createFargateStack(stack: BatchFargateStack, props: AutobahnFargateProps) {
@@ -104,11 +105,8 @@ export function createFargateStack(stack: BatchFargateStack, props: AutobahnFarg
   }
   const ecsContainerInsights = props.ecsContainerInsights;
 
-  const ecrRepositoryName = ssm.StringParameter.valueFromLookup(
-    stack,
-    `/application/v1/${stack.appName}/ecrRepository`,
-  );
-  const ecrRepository = ecr.Repository.fromRepositoryName(stack, 'Repository', ecrRepositoryName);
+
+  const ecrRepository = ecr.Repository.fromRepositoryName(stack, 'Repository', props.repositoryName);
   const executionRole = getOrCreateEcsExecutionRole(stack, ecrRepository, false);
   const taskDefinition = createTaskDefinition(stack, taskRole, executionRole, ecsVolumes, props.ecsEphemeralStorage, props.cpu, props.memory);
   const externalIntegrationSecrets = createExternalIntegrationSecrets(

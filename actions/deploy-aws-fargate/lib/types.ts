@@ -51,6 +51,7 @@ export type AppContext = Partial<{
   taskRoleArn: string;
   stsClientId: string;
   s3ApplicationDataBucketArn: string;
+  repositoryName: string;
 }>;
 
 export type ComputeEnv = 'FARGATE' | 'EC2';

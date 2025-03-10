@@ -14,6 +14,9 @@ inputs:
   region:
     description: The AWS region
     default: eu-central-1
+  repository-name:
+    description: The name of the ECR repository
+    required: true
   image-version:
     description: The version tag of the image
     required: true
@@ -568,7 +571,8 @@ runs:
           --context commitSha="${{ github.sha }}" \
           --context taskRoleArn="${{ inputs.task-role-arn }}" \
           --context stsClientId="${{ inputs.sts-client-id }}" \
-          --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}"
+          --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}" \
+          --context repositoryName="${{ inputs.repository-name }}"
 
 
     - name: CDK deployment
@@ -631,8 +635,9 @@ runs:
           --context commitSha="${{ github.sha }}" \
           --context taskRoleArn="${{ inputs.task-role-arn }}" \
           --context stsClientId="${{ inputs.sts-client-id }}" \
-          --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}"
-
+          --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}" \
+          --context repositoryName="${{ inputs.repository-name }}"
+          
         cat CfnOutput.json
 
         # Extract the stack name from the context
