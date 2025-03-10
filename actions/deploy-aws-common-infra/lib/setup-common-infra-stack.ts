@@ -10,8 +10,14 @@ export class SetupCommonInfraStack extends cdk.Stack {
 
     const vpc = ec2.Vpc.fromLookup(this, 'VPC', { vpcId: ssm.StringParameter.valueFromLookup(this, '/platform/v1/vpc/id') });
 
+    // Select public subnets in the VPC
+    const publicSubnets = vpc.selectSubnets({
+      subnetType: ec2.SubnetType.PUBLIC,
+    });
+
     const alb = new elbv2.ApplicationLoadBalancer(this, 'CommonALB', {
       vpc: vpc,
+      vpcSubnets: publicSubnets,
       deletionProtection: true,
       internetFacing: true,
       loadBalancerName: 'CommonALB',
