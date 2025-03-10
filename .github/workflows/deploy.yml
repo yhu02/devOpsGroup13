@@ -29,16 +29,16 @@ jobs:
           echo "repository-name=cloudvisualizer" >> ${GITHUB_OUTPUT}
           echo "environment=prd" >> ${GITHUB_OUTPUT}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '20'
 
-      - name: Install Dependencies
-        run: npm install
+      # - name: Install Dependencies
+      #   run: npm install
 
-      - name: Build Vite Project
-        run: npm run build
+      # - name: Build Vite Project
+      #   run: npm run build
 
       # - name: Create or update ECR repository
       #   uses: ./actions/deploy-aws-ecr-repository
