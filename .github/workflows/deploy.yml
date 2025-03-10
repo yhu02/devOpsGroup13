@@ -30,6 +30,7 @@ jobs:
           echo "environment=prd" >> ${GITHUB_OUTPUT}
           echo "cpu=256" >> ${GITHUB_OUTPUT}
           echo "memory=512" >> ${GITHUB_OUTPUT}
+          echo "image-version=latest" >> ${GITHUB_OUTPUT}
 
       # - name: Setup Node.js
       #   uses: actions/setup-node@v4
@@ -131,3 +132,4 @@ jobs:
           environment: ${{ steps.set.outputs.environment }}
           cpu: ${{ steps.set.outputs.cpu }}
           memory: ${{ steps.set.outputs.memory }}
+          image-version: ${{ steps.set.outputs.image-version }}
