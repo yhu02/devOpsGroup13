@@ -189,7 +189,6 @@ runs:
           ["account-id"]="${{ inputs.account-id }}"
           ["region"]="${{ inputs.region }}"
           ["image-version"]="${{ inputs.image-version }}"
-          ["ecs-capacity-provider"]="${{ inputs.ecs-capacity-provider }}"
           ["ecs-container-insights"]="${{ inputs.ecs-container-insights }}"
           ["use-spot"]="${{ inputs.use-spot }}"
           ["ecs-circuit-breaker-rollback"]="${{ inputs.ecs-circuit-breaker-rollback }}"
@@ -274,8 +273,6 @@ runs:
         declare -A inputs=(
           ["region"]="${{ inputs.region }}"
           ["region_VALID_VALUES"]="eu-central-1"
-          ["ecs-capacity-provider"]="${{ inputs.ecs-capacity-provider }}"
-          ["ecs-capacity-provider_VALID_VALUES"]="FARGATE, EC2"
           ["app-type"]="${{ inputs.app-type }}"
           ["app-type_VALID_VALUES"]="dash, dash-task,\
                                      fastapi, fastapi-task,\
