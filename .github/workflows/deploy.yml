@@ -122,7 +122,7 @@ jobs:
 
       - name: Setup common AWS infrastructure
         id: setup-common-infra
-        uses: Alliander/deploy-aws-common-infra@v1.0.0
+        uses: ./actions/deploy-aws-common-infra
         with:
           app-name: ${{ steps.set.outputs.app-name }}
           app-type: ${{ steps.set.outputs.app-type }}
