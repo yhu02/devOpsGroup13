@@ -470,50 +470,6 @@ runs:
           echo "stack-name=${{ inputs.app-name }}" >> ${GITHUB_OUTPUT}
         fi
 
-    - name: Create Entrypoint command
-      shell: bash
-      id: create-entrypoint
-      run: |
-        # Check if main-run-command is set
-        if [[ -n '${{ inputs.main-run-command }}' ]]; then
-          # Convert inputs to JSON format in Bash
-          MAIN_RUN_COMMAND=$(echo '${{ inputs.main-run-command }}' | jq -c '.')
-          MAIN_RUN_ARGS=$(echo '${{ inputs.main-run-args }}' | jq -c '.')
-
-          # Build JSON structure for MAIN_ENTRYPOINT
-          MAIN_ENTRYPOINT=$(echo "{
-            \"command\": ${MAIN_RUN_COMMAND},
-            \"args\": ${MAIN_RUN_ARGS}
-          }" | jq -c '[.command[]] + [.args[]]')
-
-          # Flatten JSON array to a space-separated string
-          MAIN_ENTRYPOINT=$(echo "${MAIN_ENTRYPOINT}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
-          echo "main-entrypoint=${MAIN_ENTRYPOINT}" >> "${GITHUB_OUTPUT}"
-        else
-          # Use fallback value if main-run-command is not set
-          echo "main-entrypoint=${{ inputs.main-entrypoint }}" >> "${GITHUB_OUTPUT}"
-        fi
-
-        # Check if task-run-command is set
-        if [[ -n '${{ inputs.task-run-command }}' ]]; then
-          # Convert inputs to JSON format in Bash
-          TASK_RUN_COMMAND=$(echo '${{ inputs.task-run-command }}' | jq -c '.')
-          TASK_RUN_ARGS=$(echo '${{ inputs.task-run-args }}' | jq -c '.')
-
-          # Build JSON structure for TASK_ENTRYPOINT
-          TASK_ENTRYPOINT=$(echo "{
-            \"command\": ${TASK_RUN_COMMAND},
-            \"args\": ${TASK_RUN_ARGS}
-          }" | jq -c '[.command[]] + [.args[]]')
-
-          # Flatten JSON array to a space-separated string
-          TASK_ENTRYPOINT=$(echo "${TASK_ENTRYPOINT}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
-          echo "task-entrypoint=${TASK_ENTRYPOINT}" >> "${GITHUB_OUTPUT}"
-        else
-          # Use fallback value if task-run-command is not set
-          echo "task-entrypoint=${{ inputs.task-entrypoint }}" >> "${GITHUB_OUTPUT}"
-        fi
-
     - name: CDK diff
       shell: bash
       run: |
@@ -561,8 +517,8 @@ runs:
           --context version="${{ inputs.image-version }}.${{ github.run_id }}" \
           --context jobSchedule="${{ inputs.job-schedule }}" \
           --context jobNotificationTopic="${{ inputs.job-notification-topic }}" \
-          --context mainEntrypoint="${{ steps.create-entrypoint.outputs.main-entrypoint }}" \
-          --context taskEntrypoint="${{ steps.create-entrypoint.outputs.task-entrypoint }}" \
+          --context mainEntrypoint="${{ inputs.main-entrypoint }}" \
+          --context taskEntrypoint="${{ inputs.task-entrypoint }}" \
           --context verboseOutput="${{ inputs.verbose-output }}" \
           --context rdsSecurityGroupId="${{ inputs.rds-security-group-id }}" \
           --context rdsDbName="${{ inputs.rds-db-name }}" \
@@ -625,8 +581,8 @@ runs:
           --context version="${{ inputs.image-version }}.${{ github.run_id }}" \
           --context jobSchedule="${{ inputs.job-schedule }}" \
           --context jobNotificationTopic="${{ inputs.job-notification-topic }}" \
-          --context mainEntrypoint="${{ steps.create-entrypoint.outputs.main-entrypoint }}" \
-          --context taskEntrypoint="${{ steps.create-entrypoint.outputs.task-entrypoint }}" \
+          --context mainEntrypoint="${{ inputs.main-entrypoint }}" \
+          --context taskEntrypoint="${{ inputs.task-entrypoint }}" \
           --context verboseOutput="${{ inputs.verbose-output }}" \
           --context rdsSecurityGroupId="${{ inputs.rds-security-group-id }}" \
           --context rdsDbName="${{ inputs.rds-db-name }}" \

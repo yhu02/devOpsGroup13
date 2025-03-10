@@ -150,4 +150,4 @@ jobs:
           repository-name: ${{ steps.set.outputs.repository-name }}
           reuse-alb: false
           main-entrypoint: npm run preview
-          containerport: 5173
+          container-port: 5173
