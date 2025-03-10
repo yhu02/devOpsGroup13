@@ -149,3 +149,5 @@ jobs:
           image-version: ${{ steps.set.outputs.image-version }}
           repository-name: ${{ steps.set.outputs.repository-name }}
           reuse-alb: false
+          main-entrypoint: npm run preview
+          containerport: 5173
