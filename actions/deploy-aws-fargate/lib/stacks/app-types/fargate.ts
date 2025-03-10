@@ -100,9 +100,7 @@ export function createFargateStack(stack: BatchFargateStack, props: AutobahnFarg
   // ECS setup
   const ecsVolumes: Array<ecs.Volume> = createEcsVolumeIfUsingEFS(stack, props.useEFS, props.otap);
   // Enable ECS execution role policy for tst environment (CloudShell)
-  if (props.environment === 'tst') {
-    createECSExecRolePolicyAndAppendToTaskRole(stack, taskRole);
-  }
+  createECSExecRolePolicyAndAppendToTaskRole(stack, taskRole);
   const ecsContainerInsights = props.ecsContainerInsights;
 
 
