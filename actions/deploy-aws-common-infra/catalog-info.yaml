@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: deploy-aws-common-infra
+  description: Create AWS resources that are necessary for all `appTypes` in Autobahn
+  annotations:
+    backstage.io/source-template: template:default/backstage-template-alliander-github-reusable-actions
+spec:
+  type: GRAM
+  lifecycle: production
+  owner: dploy
