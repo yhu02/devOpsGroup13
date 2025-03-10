@@ -582,8 +582,8 @@ function createFargateServiceAndALB(
   const vpc = ec2.Vpc.fromLookup(stack, 'AllianderVPC', {
     vpcId: ssm.StringParameter.valueFromLookup(stack, '/platform/v1/vpc/id'),
   });
-  const privateSubnets = vpc.selectSubnets({
-    subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+  const publicSubnets = vpc.selectSubnets({
+    subnetType: ec2.SubnetType.PUBLIC,
   });
   const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'AllianderHostedZone', {
     hostedZoneId: '{{resolve:ssm:/platform/v1/dns/public/id}}',
@@ -605,7 +605,7 @@ function createFargateServiceAndALB(
       healthCheckGracePeriod: cdk.Duration.seconds(ecsHealthCheckGracePeriod),
       circuitBreaker: { rollback: ecsCircuitBreakerRollback },
       cluster: ecsCluster,
-      taskSubnets: privateSubnets,
+      taskSubnets: publicSubnets,
       capacityProviderStrategies: [{ capacityProvider: ecsCapacityProviderFargate, weight: 1 }],
       domainName: `${stack.appName}-alb`,
       domainZone: hostedZone,
