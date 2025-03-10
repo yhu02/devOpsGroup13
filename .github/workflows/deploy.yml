@@ -124,4 +124,6 @@ jobs:
           # common settings
           app-name: ${{ steps.set.outputs.app-name }}
           app-type: ${{ steps.outputs.app-type }}
-          
+          account-id: ${{ steps.set.outputs.account-id }}
+          region: ${{ steps.set.outputs.region }}
+          environment: ${{ steps.set.outputs.environment }}

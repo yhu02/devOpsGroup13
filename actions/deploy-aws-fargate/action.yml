@@ -650,13 +650,6 @@ runs:
         echo "snowflake-sidecar=$SNOWFLAKE_SIDECAR" >> ${GITHUB_OUTPUT}
         echo "endPointURL=`jq -r '.\"${{ inputs.app-name }}\".\"EndPointURL\"' CfnOutput.json`" >> ${GITHUB_OUTPUT}
 
-    - name: Upload diagram artifact
-      id: upload-artifact
-      uses: Alliander/publish-workflow-cdk-graph-diagram@main
-      with:
-        artifact-name: Batch-Fargate-Diagram
-        root-dir: ${{ github.action_path }}
-
     - name: Deploy summary
       shell: bash
       run: |
