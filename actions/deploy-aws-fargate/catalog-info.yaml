@@ -1,0 +1,11 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: deploy-aws-batch-fargate
+  description: Create a stack for AWS Batch jobs and Fargate containers
+  annotations:
+    backstage.io/source-template: template:default/backstage-template-alliander-github-reusable-actions
+spec:
+  type: GRAM
+  lifecycle: production
+  owner: dploy

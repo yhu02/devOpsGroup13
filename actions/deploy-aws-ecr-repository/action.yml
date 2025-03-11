@@ -1,0 +1,401 @@
+name: deploy-aws-ecr-repository
+description: This action creates or updates an ECR repository in the specified AWS Account
+author: dploy
+
+inputs:
+  account-id:
+    description: The AWS account ID
+    required: true
+  region:
+    description: The AWS region
+    default: eu-central-1
+  stack-name:
+    description: The CDK stack name
+    required: true
+  app-name:
+    description: The application name
+  environment:
+    description: The environment, i.e. tst, acc or prd, only used when fine-grained-pax-permissions is true
+    default: 'tst'
+  repository-name:
+    description: The name of the ECR repository
+    required: true
+  lifecycle-policy-description:
+    description: Describes the purpose of the rule
+    default: Remove old images
+  lifecycle-policy-max-image-age:
+    description: The maximum age of images to retain. The value must represent a number of days. Specify exactly one of maxImageCount and maxImageAge.
+    default: '0'
+  lifecycle-policy-max-image-count:
+    description: The maximum number of images to retain. Specify exactly one of maxImageCount and maxImageAge.
+    default: '3'
+  permissions-policy-json:
+    description: Creates a new PolicyStatement based on the object provided
+    default: '{}'
+  allow-pull-from-pax:
+    description: Whether to allow the PAX account to pull images from this repository
+    default: 'false'
+  fine-grained-pax-permissions:
+    description: Whether to use fine-grained PAX pull permissions for the ECR repository
+    default: 'false'
+  immutable-tags:
+    description: Whether to use immutable tags for the ECR repository
+    default: 'true'
+  cdk-bootstrap:
+    description: Whether to bootstrap the CDK environment
+    default: 'true'
+  destroy:
+    description: Whether to destroy the ECR stack, including the ECR repository and all images in it. Please be careful!
+    default: 'false'
+  stackset:
+    description: The value of the stackset tag applied to the CloudFormation stack
+    default: ecr
+  stateful:
+    description: Whether the CloudFormation stack should be tagged as stateful
+    default: 'false'
+
+outputs:
+  repository-arn:
+    description: The ARN of the created/updated ECR repository
+    value: ${{ steps.deploy-ecr-repository.outputs.repository-arn }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Pre-flight check non-empty inputs
+      shell: bash
+      run: | # shell
+        # Checking if required inputs are not empty
+        declare -A inputs=(
+          ["account-id"]="${{ inputs.account-id }}"
+          ["region"]="${{ inputs.region }}"
+          ["stack-name"]="${{ inputs.stack-name }}"
+          ["repository-name"]="${{ inputs.repository-name }}"
+          ["lifecycle-policy-description"]="${{ inputs.lifecycle-policy-description }}"
+          ["lifecycle-policy-max-image-age"]="${{ inputs.lifecycle-policy-max-image-age }}"
+          ["lifecycle-policy-max-image-count"]="${{ inputs.lifecycle-policy-max-image-count }}"
+          ["permissions-policy-json"]="${{ inputs.permissions-policy-json }}"
+          ["immutable-tags"]="${{ inputs.immutable-tags }}"
+          ["cdk-bootstrap"]="${{ inputs.cdk-bootstrap }}"
+          ["stackset"]="${{ inputs.stackset }}"
+        )
+
+        # Check each input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[${input}]}"
+          if [ -z "${value}" ]; then
+            echo "::error::'${input}' is empty"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check boolean inputs
+      shell: bash
+      run: | # shell
+        # Checking if boolean inputs are 'true' or 'false'
+        declare -A inputs=(
+          ["immutable-tags"]="${{ inputs.immutable-tags }}"
+          ["cdk-bootstrap"]="${{ inputs.cdk-bootstrap }}"
+          ["allow-pull-from-pax"]="${{ inputs.allow-pull-from-pax }}"
+          ["fine-grained-pax-permissions"]="${{ inputs.fine-grained-pax-permissions }}"
+          ["stateful"]="${{ inputs.stateful }}"
+          ["destroy"]="${{ inputs.destroy }}"
+        )
+
+        # Iterate over each boolean input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[${input}]}"
+          if [[ "${value}" != "true" && "${value}" != "false" ]]; then
+            echo "::error::'${input}' must be 'true' or 'false'"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check list of values inputs
+      shell: bash
+      run: | # shell
+        # Checking if inputs are in a list of valid values
+        declare -A inputs=(
+          ["region"]="${{ inputs.region }}"
+          ["region_VALID_VALUES"]="eu-central-1, eu-west-1"
+          ["environment"]="${{ inputs.environment }}"
+          ["environment_VALID_VALUES"]="tst, acc, prd"
+        )
+
+        # Check if the input is in the list of valid values
+        for input in "${!inputs[@]}"; do
+          # Skip the valid values entries
+          if [[ "${input}" == *_VALID_VALUES ]]; then
+            continue
+          fi
+
+          value="${inputs[${input}]}"
+          valid_values="${inputs[${input}_VALID_VALUES]}"
+          if [[ ! "$valid_values" =~ "${value}" ]]; then
+            echo "::error::'${input}' must be one of the following values: ${valid_values}, you specified ${value}"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check git repository
+      shell: bash
+      run: | # shell
+        if ! git branch 2> /dev/null; then
+          echo "::error::Not in a git repository. Exiting.."
+          exit 1
+        fi
+
+    - name: Pre-flight check AWS CLI
+      shell: bash
+      run: | # shell
+        if ! command -v aws > /dev/null 2>&1
+        then
+          echo "The AWS CLI has not been installed, AWS CLI is needed to run this action successfully." \
+               " Please make sure your (self)hosted runner or base image has the AWS CLI installed."
+          exit 1
+        fi
+
+    - name: Validate input parameters
+      shell: bash
+      run: |
+        # Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_ecr.Repository.html
+
+        if ! [[ "${{ inputs.repository-name }}" =~ ^[a-z][a-z0-9\/_.-]*$ ]]
+        then
+          echo "::error:: Your repository-name ${{ inputs.repository-name }} is not valid." \
+          "Repository name must start with a letter and can only contain lowercase letters, " \
+          "numbers, hyphens, underscores, periods and forward slashes."
+          exit 1
+        fi;
+
+        if [[ "${{ inputs.lifecycle-policy-max-image-age }}" == "0" && "${{ inputs.lifecycle-policy-max-image-count }}" == "0" ]]
+        then
+          echo "::error:: You didn't specify a Max Image Age nor a Max Image Count, this is invalid." \
+          "You need to specify either a Max Image Age or a Max Image Count or remove these parameters to use the defaults."
+          exit 1
+        fi;
+
+        if [[ "${{ inputs.lifecycle-policy-max-image-age }}" != "0" && "${{ inputs.lifecycle-policy-max-image-count }}" != "0" ]]
+        then
+          echo "::error:: You specified both a Max Image Age and a Max Image Count, this is invalid" \
+          "You need to specify either a Max Image Age or a Max Image Count or remove these parameters to use the defaults."
+          exit 1
+        fi;
+
+    - name: Generate permissions policy json
+      id: generate-permissions-policy-json
+      shell: bash
+      run: |
+        if [[ "${{ inputs.allow-pull-from-pax }}" == "false" ]]
+        then
+          PERMISSIONS_POLICY_STATEMENT_JSON='${{ inputs.permissions-policy-json }}'
+        else
+          if [[ "${{ inputs.permissions-policy-json }}" != "{}" ]]
+          then
+            echo "::error::You've specified a permissions policy, this is not possible for PAX deployments." \
+                 "Please remove the permissions policy or set allow-pull-from-pax to false." \
+                 "We'll set the permissions policy to allow the PAX account to pull images from this repository."
+          fi
+          if [[ "${{ inputs.fine-grained-pax-permissions }}" == "false" ]]
+          then
+            # This policy allows all (yet non-SO) PAX accounts to pull images from the repository
+            PERMISSIONS_POLICY_STATEMENT_JSON='{
+              "Sid": "AllowPull",
+              "Effect": "Allow",
+              "Principal": {
+              "AWS": [
+                  "arn:aws:iam::588702356927:root",
+                  "arn:aws:iam::067071333499:root",
+                  "arn:aws:iam::253627738513:root"
+              ]
+              },
+              "Action": [
+                  "ecr:BatchCheckLayerAvailability",
+                  "ecr:BatchGetImage",
+                  "ecr:GetAuthorizationToken",
+                  "ecr:GetDownloadUrlForLayer"
+              ]
+            }'
+          else
+            # TODO: Add separation for PAX accounts, i.e. PAX and PAX-SO
+            # This policy allows zoned PAX accounts to pull images from the repository
+            case ${{ inputs.environment }} in
+              tst)
+                ACCOUNT_ID_PAX_AL=588702356927
+                ACCOUNT_ID_PAX_SO=120923713462
+              ;;
+              acc)
+                ACCOUNT_ID_PAX_AL=067071333499
+                ACCOUNT_ID_PAX_SO=632608932387
+              ;;
+              prd)
+                ACCOUNT_ID_PAX_AL=253627738513
+                ACCOUNT_ID_PAX_SO=553070972652
+              ;;
+              *)
+                echo "::error::Invalid environment ${{ inputs.environment }} for fine-grained setup." \
+                     "Supported environments are 'tst', 'acc' and 'prd'." \
+                     "Please set fine-grained-pax-permissions to false or set the correct environment."
+                exit 1
+              ;;
+            esac
+            PERMISSIONS_POLICY_STATEMENT_JSON='{
+              "Sid": "AllowPull",
+              "Effect": "Allow",
+              "Principal": {
+              "AWS": [
+                  "arn:aws:iam::'"$ACCOUNT_ID_PAX_AL"':root",
+                  "arn:aws:iam::'"$ACCOUNT_ID_PAX_SO"':root"
+              ]
+              },
+              "Action": [
+                  "ecr:BatchCheckLayerAvailability",
+                  "ecr:BatchGetImage",
+                  "ecr:GetAuthorizationToken",
+                  "ecr:GetDownloadUrlForLayer"
+              ]
+            }'
+          fi
+        fi
+        echo "permissions-policy-statement-json=$(echo ${PERMISSIONS_POLICY_STATEMENT_JSON} | jq -R .)" >> ${GITHUB_OUTPUT}
+
+    - name: Set up Node.js 20.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ inputs.region }}
+        role-to-assume: arn:aws:iam::${{ inputs.account-id }}:role/gh-actions-${{ github.event.repository.name }}
+        role-session-name: GitHubActions
+
+    # There's no CDK command to remove existing policies from a repository, so we'll use the CLI for now
+    - name: Remove policy with CLI if existing
+      shell: bash
+      run: |
+        if [[ ${{ steps.generate-permissions-policy-json.outputs.permissions-policy-statement-json }} == "{}" ]]
+        then
+          if [[ "$(aws ecr describe-repositories \
+            --output text \
+            --query 'repositories[?repositoryName==`${{ inputs.repository-name }}`]')" != "" ]]
+          then
+            if [[ "$(aws ecr get-repository-policy \
+            --output text \
+            --repository-name ${{ inputs.repository-name }})" != "" ]]
+            then
+              aws ecr delete-repository-policy --repository-name ${{ inputs.repository-name }}
+            fi;
+          fi;
+        fi;
+
+    - name: Install CDK globally and install projects dependencies
+      shell: bash
+      run: |
+        npm i -g aws-cdk
+        cd ${GITHUB_ACTION_PATH}
+
+        #emulate npm ci https://github.com/aws/aws-pdk/issues/755
+        rm -rf node_modules; npm install --no-save
+
+    - name: CDK bootstrap
+      id: bootstrap
+      if: ${{ inputs.cdk-bootstrap == 'true' }}
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        echo "Bootstrapping environment"
+        cdk bootstrap --app "" aws://${{ inputs.account-id }}/${{ inputs.region }}
+
+    - name: CDK diff
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        cdk diff \
+        --context stackName="${{ inputs.stack-name }}" \
+        --context appName="${{ inputs.app-name }}" \
+        --context repositoryName="${{ inputs.repository-name }}" \
+        --context lifecyclePolicyDescription="${{ inputs.lifecycle-policy-description }}" \
+        --context lifecyclePolicyMaxImageAge="${{ inputs.lifecycle-policy-max-image-age }}" \
+        --context lifecyclePolicyMaxImageCount="${{ inputs.lifecycle-policy-max-image-count }}" \
+        --context permissionsPolicyJson=${{ steps.generate-permissions-policy-json.outputs.permissions-policy-statement-json }} \
+        --context immutableTags="${{ inputs.immutable-tags }}" \
+        --context branch="${{ github.ref }}" \
+        --context repo="${{ github.repository }}" \
+        --context commitSha="${{ github.sha }}" \
+        --context stackset="${{ inputs.stackset }}" \
+        --context stateful="${{ inputs.stateful }}"
+
+    - name: Create ECR
+      id: deploy-ecr-repository
+      shell: bash
+      run: |
+        cd ${GITHUB_ACTION_PATH}
+        cdk deploy \
+        -O CfnOutput.json \
+        --context stackName="${{ inputs.stack-name }}" \
+        --context appName="${{ inputs.app-name }}" \
+        --context repositoryName="${{ inputs.repository-name }}" \
+        --context lifecyclePolicyDescription="${{ inputs.lifecycle-policy-description }}" \
+        --context lifecyclePolicyMaxImageAge="${{ inputs.lifecycle-policy-max-image-age }}" \
+        --context lifecyclePolicyMaxImageCount="${{ inputs.lifecycle-policy-max-image-count }}" \
+        --context permissionsPolicyJson=${{ steps.generate-permissions-policy-json.outputs.permissions-policy-statement-json }} \
+        --context immutableTags="${{ inputs.immutable-tags }}" \
+        --context branch="${{ github.ref }}" \
+        --context repo="${{ github.repository }}" \
+        --context commitSha="${{ github.sha }}" \
+        --context stackset="${{ inputs.stackset }}" \
+        --context stateful="${{ inputs.stateful }}"
+
+        echo "repository-arn=`jq -r '.\"${{ inputs.stack-name }}\".\"RepositoryARN\"' CfnOutput.json`" >> ${GITHUB_OUTPUT}
+
+    # TODO: refactor and enable the destroy step to allow for cleanup
+    # - name: Destroy the stack
+    #   if: ${{ inputs.destroy == 'true' }}
+    #   shell: bash
+    #   run: |
+    #     cd ${GITHUB_ACTION_PATH}
+
+    #     # Check if the CF stack exists
+    #     if aws cloudformation describe-stacks --stack-name ${{ inputs.stack-name }} &> /dev/null
+    #     then
+    #       # Find the ECR repo in the CF stack
+    #       ecr_repo=$(aws cloudformation list-stack-resources \
+    #             --stack-name ${{ inputs.stack-name }} \
+    #             --output text \
+    #             --query 'StackResourceSummaries[?ResourceType==`AWS::ECR::Repository`].PhysicalResourceId')
+
+    #       # Delete the ECR repo, required because CDK won't delete it
+    #       if [[ -n "$ecr_repo" ]]; then
+    #         echo "Deleting the ECR repo: ${ecr_repo}"
+    #         aws ecr delete-repository --repository-name ${ecr_repo} --force
+    #       fi
+
+    #       # Destroy the stack
+    #       cdk destroy \
+    #         --force \
+    #         --context stackName="${{ inputs.stack-name }}" \
+    #         --context appName="${{ inputs.app-name }}" \
+    #         --context repositoryName="${{ inputs.repository-name }}" \
+    #         --context lifecyclePolicyDescription="${{ inputs.lifecycle-policy-description }}" \
+    #         --context lifecyclePolicyMaxImageAge="${{ inputs.lifecycle-policy-max-image-age }}" \
+    #         --context lifecyclePolicyMaxImageCount="${{ inputs.lifecycle-policy-max-image-count }}" \
+    #         --context permissionsPolicyJson=${{ steps.generate-permissions-policy-json.outputs.permissions-policy-statement-json }} \
+    #         --context immutableTags="${{ inputs.immutable-tags }}" \
+    #         --context branch="${{ github.ref }}" \
+    #         --context repo="${{ github.repository }}" \
+    #         --context commitSha="${{ github.sha }}" \
+    #         --context stackset="${{ inputs.stackset }}" \
+    #         --context stateful="${{ inputs.stateful }}"
+
+    #     else
+    #         echo "Stack ${{ inputs.stack-name }} does not exist."
+    #     fi
+
+    - name: Deploy summary
+      shell: bash
+      run: |
+        echo "### :package: Deployment was successful in account ${{ inputs.account-id }}" >> ${GITHUB_STEP_SUMMARY}
+        echo "" >> ${GITHUB_STEP_SUMMARY}
+        echo "- Your ECR repository is ${{ inputs.repository-name }} with ARN ${{ steps.deploy-ecr-repository.outputs.repository-arn }}" >> ${GITHUB_STEP_SUMMARY}
