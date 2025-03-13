@@ -4,7 +4,8 @@ import { Network } from 'vis-network'
 import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
-import { getVPCFlowLogs } from '../../aws/cloudwatchapi'
+import { GetNetworkSettings } from '../../utils/getNetworkSettings'
+import { ResourceMetaData } from '../../aws/resourceMap'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
@@ -17,31 +18,11 @@ interface GraphEdge {
 
 function Home() {
   const networkRef = useRef<HTMLDivElement>(null)
-
+  const resourceMetadata = ResourceMetaData.getInstance()
   // State for resources and dependencies
-  const [resources, setResources] = useState<AwsResource[]>([
-    { id: 'vpc-1', type: 'VPC', name: 'Main VPC' },
-    { id: 'vpc-2', type: 'VPC', name: 'Secondary VPC' },
-    { id: 'rds-1', type: 'RDS', name: 'OrdersDB' },
-    { id: 'rds-2', type: 'RDS', name: 'AnalyticsDB' },
-    { id: 'ec2-1', type: 'EC2', name: 'Web Server' },
-    { id: 'ec2-2', type: 'EC2', name: 'API Server' },
-    { id: 'ec2-3', type: 'EC2', name: 'Worker Node' },
-  ])
-
-  const [dependencies, setDependencies] = useState<Dependency[]>([
-    { from: 'vpc-1', to: 'rds-1', relationship: 'contains' },
-    { from: 'vpc-1', to: 'ec2-1', relationship: 'contains' },
-    { from: 'vpc-1', to: 'ec2-2', relationship: 'contains' },
-    { from: 'vpc-2', to: 'rds-2', relationship: 'contains' },
-    { from: 'vpc-2', to: 'ec2-3', relationship: 'contains' },
-    { from: 'ec2-1', to: 'rds-1', relationship: 'connects' },
-    { from: 'ec2-2', to: 'rds-1', relationship: 'connects' },
-    { from: 'ec2-2', to: 'rds-2', relationship: 'connects' },
-    { from: 'ec2-3', to: 'rds-2', relationship: 'connects' },
-    { from: 'ec2-1', to: 'ec2-2', relationship: 'communicates' },
-    { from: 'ec2-2', to: 'ec2-3', relationship: 'communicates' },
-  ])
+  const [resources, setResources] = useState<AwsResource[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [dependencies, setDependencies] = useState<Dependency[]>([])
 
   // Create network visualization
   useEffect(() => {
@@ -68,149 +49,7 @@ function Home() {
       const network = new Network(
         networkRef.current,
         { nodes, edges },
-        {
-          autoResize: true,
-          width: '100%',
-          height: '100%',
-          locale: 'en',
-          locales: undefined,
-          clickToUse: false,
-          configure: {
-            enabled: true,
-            filter: true,
-            container: undefined,
-            showButton: true,
-          },
-          edges: {
-            arrows: {
-              to: { enabled: true, type: 'arrow', scaleFactor: 1 },
-              from: { enabled: false },
-              middle: { enabled: false },
-            },
-            color: {
-              color: '#848484',
-              highlight: '#848484',
-              hover: '#848484',
-              inherit: false,
-              opacity: 1.0,
-            },
-            smooth: {
-              enabled: false,
-              type: 'straightCross',
-              roundness: 0,
-            },
-            width: 1,
-            selectionWidth: 1,
-            hoverWidth: 1.5,
-            shadow: false,
-            font: { size: 12, face: 'arial', color: '#ff0000' },
-            scaling: {
-              label: true,
-            },
-          },
-          nodes: {
-            borderWidth: 1,
-            borderWidthSelected: 2,
-            shape: 'dot',
-            image: undefined,
-            brokenImage: undefined,
-            color: {
-              border: '#3366CC',
-              background: '#99CCFF',
-              highlight: { border: '#2B50AA', background: '#AAD4FF' },
-              hover: { border: '#2B50AA', background: '#D2E5FF' },
-            },
-            font: {
-              face: 'arial',
-              color: '#343434',
-              size: 14,
-              background: 'none',
-              strokeWidth: 0,
-              strokeColor: '#ffffff',
-            },
-            icon: {
-              face: 'FontAwesome',
-              code: undefined,
-              size: 50,
-              color: '#2B7CE9',
-            },
-            shapeProperties: {
-              useImageSize: false,
-              useBorderWithImage: true,
-              interpolation: false,
-              coordinateOrigin: 'center',
-            },
-          },
-          groups: {
-            useDefaultGroups: true,
-            myGroup: { color: { background: 'red' }, borderWidth: 3 },
-          },
-          layout: {
-            randomSeed: undefined,
-            improvedLayout: true,
-            clusterThreshold: 150,
-            hierarchical: {
-              enabled: false,
-              direction: 'UD',
-              sortMethod: 'directed',
-              levelSeparation: 150,
-              nodeSpacing: 250,
-              treeSpacing: 300,
-              blockShifting: true,
-              edgeMinimization: true,
-              parentCentralization: true,
-            },
-          },
-          interaction: {
-            dragNodes: true,
-            dragView: true,
-            hideEdgesOnDrag: false,
-            hideEdgesOnZoom: false,
-            hideNodesOnDrag: false,
-            hover: true,
-            hoverConnectedEdges: true,
-            keyboard: {
-              enabled: false,
-              speed: { x: 10, y: 10, zoom: 0.02 },
-              bindToWindow: true,
-            },
-            multiselect: false,
-            navigationButtons: true,
-            selectable: true,
-            selectConnectedEdges: true,
-            tooltipDelay: 300,
-            zoomSpeed: 1,
-            zoomView: true,
-          },
-          manipulation: {
-            enabled: false,
-            initiallyActive: false,
-            addNode: true,
-            addEdge: true,
-            editNode: undefined,
-            editEdge: true,
-            deleteNode: true,
-            deleteEdge: true,
-            controlNodeStyle: {},
-          },
-          physics: {
-            enabled: true,
-            solver: 'hierarchicalRepulsion',
-            hierarchicalRepulsion: {
-              centralGravity: 0.0,
-              springLength: 100,
-              springConstant: 0.01,
-              nodeDistance: 200,
-            },
-            stabilization: {
-              enabled: true,
-              iterations: 200,
-              updateInterval: 25,
-              fit: true,
-            },
-            minVelocity: 0.75,
-          },
-        }
+        GetNetworkSettings()
       )
 
       network.on('click', (params) => {
@@ -227,7 +66,6 @@ function Home() {
           }
         }
       })
-
       // Return cleanup function
       return () => {
         network.destroy()
@@ -235,17 +73,20 @@ function Home() {
     }
   }, [resources, dependencies]) // Re-run when resources or dependencies change
 
-  // Handle button click
-  const handleLoadData = async () => {
-    try {
-      const result = await getVPCFlowLogs()
-      if (result.resources && result.dependencies) {
-        setResources(result.resources)
-        setDependencies(result.dependencies)
-      }
-    } catch (error) {
-      console.error('Error loading AWS data:', error)
+  useEffect(() => {
+    const loadData = async () => {
+      await loadAwsData()
     }
+    loadData()
+  }, [])
+
+  // Handle button click
+  const loadAwsData = async () => {
+    setIsLoading(true)
+    await resourceMetadata.mapResources()
+    setDependencies(resourceMetadata.getDependecies())
+    setResources(resourceMetadata.getAllResources())
+    setIsLoading(false)
   }
 
   return (
@@ -253,13 +94,13 @@ function Home() {
       <h1>Welcome to Cloud Visualizer</h1>
       <div>
         <p>A tool for visualizing cloud infrastructure</p>
-        <button
-          onClick={handleLoadData}
-          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-        >
-          Load VPC flow log
-        </button>
-        <div ref={networkRef} style={{ height: '100vh', width: '100%' }} />
+        {isLoading ? (
+          <div className="flex h-96 w-full items-center justify-center">
+            <div className="text-xl">Loading cloud resources...</div>
+          </div>
+        ) : (
+          <div ref={networkRef} style={{ height: '100vh', width: '100%' }} />
+        )}
       </div>
     </div>
   )
