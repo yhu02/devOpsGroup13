@@ -5,7 +5,6 @@ import 'vis-network/styles/vis-network.css'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
 import { getVPCFlowLogs } from '../../aws/cloudwatchapi'
-import { testDescribeEc2s } from '../../aws/resources-in-vpc'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
@@ -249,15 +248,6 @@ function Home() {
     }
   }
 
-  const handleExploreData = async() => {
-    try {
-      const result = await testDescribeEc2s()
-      console.log(result)
-    } catch (error) {
-      console.error('Error during VPC resource exploration:', error)
-    }
-  }
-
   return (
     <div>
       <h1>Welcome to Cloud Visualizer</h1>
@@ -268,12 +258,6 @@ function Home() {
           className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
         >
           Load VPC flow log
-        </button>
-        <button
-          onClick={handleExploreData}
-          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-        >
-          Explore resources in VPC
         </button>
         <div ref={networkRef} style={{ height: '100vh', width: '100%' }} />
       </div>

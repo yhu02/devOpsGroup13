@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.750.0",
-    "@aws-sdk/client-ec2": "^3.766.0",
     "@aws-sdk/client-resource-explorer-2": "^3.758.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
