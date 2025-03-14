@@ -1,26 +1,14 @@
 import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandInput } from "@aws-sdk/client-ec2";
+import { ResourceMetaData } from "./resourceMap";
 
  const vpcId = 'vpc-0c71a936b3fd5716c'
  const region = 'eu-central-1'
 
- interface AwsResource {
-     id: string;
-     type: string;
-     name: string;
- }
-
-// Placeholder function to create a new resource map.
-// This can be replaced or extended in the future for integration.
-function createResourceMap(): Map<string, AwsResource> {
-    return new Map<string, AwsResource>();
-}
-
-  async function describe_ec2s(
+  export async function describe_ec2s(
      vpcId: string,
      region: string
-  ): Promise<Map<string, AwsResource>> {
-    // Use the placeholder function to get a new map.
-    const resourceMap = createResourceMap();
+  ){
+    const resourceMetadata : ResourceMetaData = ResourceMetaData.getInstance()
 
     const ec2Client = new EC2Client({
         region: import.meta.env.VITE_AWS_REGION || region,
@@ -52,17 +40,11 @@ function createResourceMap(): Map<string, AwsResource> {
 
                 // Add the resource to the map using the IP address as the key
                 if (privateIp) {
-                    resourceMap.set(privateIp, { id: instanceId!, type: 'EC2', name: nameTag });
+                    resourceMetadata.setResource(privateIp, { id: instanceId!, type: 'EC2', name: nameTag });
                 }
             });
         });
     } catch (error) {
         console.error("Error describing EC2 instances:", error);
     }
-
-    return resourceMap;
  }
-
-export async function testDescribeEc2s() {
-    return describe_ec2s(vpcId, region)
-}

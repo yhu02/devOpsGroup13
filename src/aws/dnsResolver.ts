@@ -1,3 +1,6 @@
+import { AwsIpRangeManager } from './awsIpRangeManager'
+import { ResourceMetaData } from './resourceMap'
+
 interface DnsResponse {
   Status: number
   Answer?: {
@@ -106,4 +109,41 @@ class DnsResolver {
   }
 }
 
-export { DnsResolver }
+export async function retrieveDNSInfo(uniqueIps: Set<string>) {
+  const dnsResolver = DnsResolver.getInstance()
+  const resourceMetadata = ResourceMetaData.getInstance()
+  const dnsResolutionPromises: Promise<void>[] = []
+  const awsIpChecker = AwsIpRangeManager.getInstance()
+  await awsIpChecker.initialize()
+  // keep track of unique ips that we are processing to ensure we are not entering an ip into the queue multiple times 
+  const processingIps = new Set<string>()
+  
+  for (const ip of uniqueIps) {
+    if (!awsIpChecker.isAwsIp(ip) && !resourceMetadata.hasResource(ip) && !processingIps.has(ip)) {
+      processingIps.add(ip)
+      
+      dnsResolutionPromises.push(
+        dnsResolver.resolveIp(ip).then((hostname) => {
+          const name = dnsResolver.getResourceName(ip, hostname)
+          const type = hostname !== ip ? 'Domain' : 'IP'
+          resourceMetadata.setResource(ip, {
+            id: ip,
+            type,
+            name,
+          })
+        }).catch((err) => {
+          console.error(`Failed to resolve hostname for IP ${ip}:`, err)
+          // Fall back to ips
+          resourceMetadata.setResource(ip, {
+            id: ip,
+            type: 'IP',
+            name: `IP ${ip}`,
+          })
+        })
+      )
+    }
+  }
+
+  await Promise.allSettled(dnsResolutionPromises)
+  console.log(`Resolved hostnames for ${dnsResolutionPromises.length} IPs`)
+}

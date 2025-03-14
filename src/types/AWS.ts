@@ -9,3 +9,6 @@ export interface Dependency {
   to: string // id of the target resource
   relationship: string // e.g., "contains", "connects to"
 }
+export interface FormattedLogResult {
+  [key: string]: string
+}
