@@ -1,9 +1,36 @@
-import { CloudWatchQueryConfig, FormattedLogResult } from '@/types/AWS'
+import { CloudWatch } from '@/lib/clients/CloudWatch'
+import { FormattedLogResult } from '@/types/AWS'
 import {
   CloudWatchLogsClient,
-  StartQueryCommand,
   GetQueryResultsCommand,
+  StartQueryCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
+interface CloudWatchQueryConfig {
+  logGroupNames: string[]
+  queryString: string
+  startTime: Date
+  endTime: Date
+  limit: number
+}
+
+interface AwsIpRangeEntry {
+  ip_prefix: string
+  region: string
+  service: string
+  network_border_group: string
+}
+
+export interface AwsIpRanges {
+  createDate: string
+  prefixes: AwsIpRangeEntry[]
+  ipv6_prefixes: any[]
+}
+
+// AWS IP ranges official JSON URL
+export const AWS_IP_RANGES_URL =
+  'https://ip-ranges.amazonaws.com/ip-ranges.json'
+
+export const AWS_SERVICES_ID = 'aws-services'
 
 class CloudWatchQuery {
   private client: CloudWatchLogsClient
@@ -62,13 +89,7 @@ class CloudWatchQuery {
 }
 
 function createVpcFlowLogsQuery(): CloudWatchQuery {
-  const client = new CloudWatchLogsClient({
-    region: import.meta.env.VITE_AWS_REGION,
-    credentials: {
-      accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
-    },
-  })
+  const client = CloudWatch.getInstance()
   return new CloudWatchQuery(client, {
     logGroupNames: ['/aws/vpc/test-flow-logs'],
     queryString: `
