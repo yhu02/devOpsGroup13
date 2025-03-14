@@ -1,5 +1,6 @@
 import ipaddr from 'ipaddr.js'
-import { AWS_IP_RANGES_URL, AwsIpRanges } from './cloudwatchApi'
+import { AWS_IP_RANGES_URL } from '@/types/AWS'
+import { AwsIpRanges } from '@/types/dnsAndIp'
 
 // singleton class to manage AWS IP ranges
 

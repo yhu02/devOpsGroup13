@@ -1,36 +1,9 @@
-import { FormattedLogResult } from '@/types/AWS'
+import { CloudWatchQueryConfig, FormattedLogResult } from '@/types/AWS'
 import {
   CloudWatchLogsClient,
   StartQueryCommand,
   GetQueryResultsCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
-
-interface CloudWatchQueryConfig {
-  logGroupNames: string[]
-  queryString: string
-  startTime: Date
-  endTime: Date
-  limit: number
-}
-
-interface AwsIpRangeEntry {
-  ip_prefix: string
-  region: string
-  service: string
-  network_border_group: string
-}
-
-export interface AwsIpRanges {
-  createDate: string
-  prefixes: AwsIpRangeEntry[]
-  ipv6_prefixes: any[]
-}
-
-// AWS IP ranges official JSON URL
-export const AWS_IP_RANGES_URL =
-  'https://ip-ranges.amazonaws.com/ip-ranges.json'
-
-export const AWS_SERVICES_ID = 'aws-services'
 
 class CloudWatchQuery {
   private client: CloudWatchLogsClient

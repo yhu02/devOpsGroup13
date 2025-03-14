@@ -1,9 +1,6 @@
 import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandInput } from "@aws-sdk/client-ec2";
 import { ResourceMetaData } from "./resourceMap";
 
- const vpcId = 'vpc-0c71a936b3fd5716c'
- const region = 'eu-central-1'
-
   export async function describe_ec2s(
      vpcId: string,
      region: string

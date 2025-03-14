@@ -12,3 +12,16 @@ export interface Dependency {
 export interface FormattedLogResult {
   [key: string]: string
 }
+export const AWS_SERVICES_ID = 'aws-services'// AWS IP ranges official JSON URL
+
+export const AWS_IP_RANGES_URL = 'https://ip-ranges.amazonaws.com/ip-ranges.json'
+
+export const AWS_SERVICES_ID = 'aws-services'
+export interface CloudWatchQueryConfig {
+  logGroupNames: string[]
+  queryString: string
+  startTime: Date
+  endTime: Date
+  limit: number
+}
+

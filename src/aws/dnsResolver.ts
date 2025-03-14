@@ -1,15 +1,6 @@
 import { AwsIpRangeManager } from './awsIpRangeManager'
+import { DnsResponse } from './DnsResponse'
 import { ResourceMetaData } from './resourceMap'
-
-interface DnsResponse {
-  Status: number
-  Answer?: {
-    name: string
-    type: number
-    TTL: number
-    data: string
-  }[]
-}
 
 class DnsResolver {
   private static instance: DnsResolver
