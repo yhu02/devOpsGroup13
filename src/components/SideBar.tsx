@@ -13,6 +13,12 @@ export default function SideBar() {
         >
           About
         </Link>
+        <Link
+          to="/health"
+          className="text-gray-700 no-underline hover:text-gray-900"
+        >
+          Health
+        </Link>
       </div>
     </nav>
   )
