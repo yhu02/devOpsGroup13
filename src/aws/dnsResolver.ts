@@ -19,7 +19,7 @@ interface DnsResponse {
  *
  *
  */
-class DnsResolver {
+export class DnsResolver {
   private static instance: DnsResolver
   private cache: Map<string, string> = new Map()
   private pendingRequests: Map<string, Promise<string>> = new Map()
@@ -122,7 +122,6 @@ class DnsResolver {
   }
 }
 
-// Retrieve DNS info for a set of IPs
 export async function retrieveDNSInfo(uniqueIps: Set<string>) {
   const dnsResolver = DnsResolver.getInstance()
   const resourceMetadata = ResourceMetaData.getInstance()
