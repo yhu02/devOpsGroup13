@@ -1,7 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Route, BrowserRouter as Router, Routes } from 'react-router'
 import SideBar from './components/SideBar'
-import Health from './router/aws/Health'
 
 // Lazy load route components
 const NotFound = lazy(() => import('./components/NotFound'))
@@ -13,13 +12,11 @@ function App() {
     <Router>
       <div className="flex">
         <SideBar />
-
         <main className="flex-1 p-5">
           <Suspense fallback={<div>Loading...</div>}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
-              <Route path="/health" element={<Health />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
