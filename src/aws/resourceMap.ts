@@ -2,6 +2,7 @@ import { AwsResource, Dependency, FormattedLogResult } from '@/types/AWS'
 import { getVPCFlowLogs } from './cloudwatchApi'
 import { AwsIpRangeManager } from './awsIpRangeManager'
 import { retrieveDNSInfo } from './dnsResolver'
+import { describe_ec2s} from './resources-in-vpc'
 const AWS_SERVICES_ID = 'aws-services'
 
 export class ResourceMetaData {
@@ -59,11 +60,17 @@ export class ResourceMetaData {
     // all of the getters / api handlers
     // they should take the mapManager and use its .add function
 
-    this.resourceMap.set('172.31.38.213', {
-      id: 'EC2ID',
-      type: 'EC2',
-      name: 'test ec2',
-    })
+    //should be handled differently
+    const vpcId = 'vpc-0c71a936b3fd5716c'
+    const vpcRegion = 'eu-central-1'
+    await describe_ec2s(vpcId,vpcRegion)    
+
+
+    // this.resourceMap.set('172.31.38.213', {
+    //   id: 'EC2ID',
+    //   type: 'EC2',
+    //   name: 'test ec2',
+    // })
     this.resourceMap.set(AWS_SERVICES_ID, {
       id: AWS_SERVICES_ID,
       type: 'AWS',
