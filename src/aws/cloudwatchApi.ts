@@ -1,10 +1,10 @@
+import { CloudWatch } from '@/lib/clients/CloudWatch'
 import { FormattedLogResult } from '@/types/AWS'
 import {
   CloudWatchLogsClient,
-  StartQueryCommand,
   GetQueryResultsCommand,
+  StartQueryCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
-
 interface CloudWatchQueryConfig {
   logGroupNames: string[]
   queryString: string
@@ -89,13 +89,7 @@ class CloudWatchQuery {
 }
 
 function createVpcFlowLogsQuery(): CloudWatchQuery {
-  const client = new CloudWatchLogsClient({
-    region: import.meta.env.VITE_AWS_REGION,
-    credentials: {
-      accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
-      secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
-    },
-  })
+  const client = CloudWatch.getInstance()
   return new CloudWatchQuery(client, {
     logGroupNames: ['/aws/vpc/test-flow-logs'],
     queryString: `

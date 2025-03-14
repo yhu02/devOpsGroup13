@@ -11,6 +11,14 @@ interface DnsResponse {
   }[]
 }
 
+/**
+ * Class that creates a singleton DNS Resolver.
+ * We can use it to do a few things:
+ * 1. Resolve an IP to a hostname
+ * 2. Get the resource name for an IP
+ *
+ *
+ */
 class DnsResolver {
   private static instance: DnsResolver
   private cache: Map<string, string> = new Map()
@@ -60,6 +68,8 @@ class DnsResolver {
     return `${ip.split('.').reverse().join('.')}.in-addr.arpa`
   }
 
+  // Fetch the PTR record for an IP.
+  // A PTR record is a reverse DNS lookup returning the hostname for an IP.
   private async _fetchPtrRecord(ip: string): Promise<string> {
     try {
       const reversedIp = this._formatReverseIp(ip)
@@ -78,9 +88,11 @@ class DnsResolver {
 
       const data: DnsResponse = await response.json()
 
+      // If we get a response, return the hostname
       if (data.Answer && data.Answer.length > 0) {
         return data.Answer[0].data
       } else {
+        // If we don't get a response, return the IP
         return ip
       }
     } catch (error) {
@@ -90,6 +102,7 @@ class DnsResolver {
     }
   }
 
+  // Get the resource name for an IP
   public getResourceName(ip: string, hostname: string): string {
     if (hostname && hostname !== ip) {
       // Strip the hostname to just the domain name (e.g remove subdomains)
@@ -109,37 +122,45 @@ class DnsResolver {
   }
 }
 
+// Retrieve DNS info for a set of IPs
 export async function retrieveDNSInfo(uniqueIps: Set<string>) {
   const dnsResolver = DnsResolver.getInstance()
   const resourceMetadata = ResourceMetaData.getInstance()
   const dnsResolutionPromises: Promise<void>[] = []
   const awsIpChecker = AwsIpRangeManager.getInstance()
   await awsIpChecker.initialize()
-  // keep track of unique ips that we are processing to ensure we are not entering an ip into the queue multiple times 
+  // keep track of unique ips that we are processing to ensure we are not entering an ip into the queue multiple times
   const processingIps = new Set<string>()
-  
+
   for (const ip of uniqueIps) {
-    if (!awsIpChecker.isAwsIp(ip) && !resourceMetadata.hasResource(ip) && !processingIps.has(ip)) {
+    if (
+      !awsIpChecker.isAwsIp(ip) &&
+      !resourceMetadata.hasResource(ip) &&
+      !processingIps.has(ip)
+    ) {
       processingIps.add(ip)
-      
+
       dnsResolutionPromises.push(
-        dnsResolver.resolveIp(ip).then((hostname) => {
-          const name = dnsResolver.getResourceName(ip, hostname)
-          const type = hostname !== ip ? 'Domain' : 'IP'
-          resourceMetadata.setResource(ip, {
-            id: ip,
-            type,
-            name,
+        dnsResolver
+          .resolveIp(ip)
+          .then((hostname) => {
+            const name = dnsResolver.getResourceName(ip, hostname)
+            const type = hostname !== ip ? 'Domain' : 'IP'
+            resourceMetadata.setResource(ip, {
+              id: ip,
+              type,
+              name,
+            })
           })
-        }).catch((err) => {
-          console.error(`Failed to resolve hostname for IP ${ip}:`, err)
-          // Fall back to ips
-          resourceMetadata.setResource(ip, {
-            id: ip,
-            type: 'IP',
-            name: `IP ${ip}`,
+          .catch((err) => {
+            console.error(`Failed to resolve hostname for IP ${ip}:`, err)
+            // Fall back to ips
+            resourceMetadata.setResource(ip, {
+              id: ip,
+              type: 'IP',
+              name: `IP ${ip}`,
+            })
           })
-        })
       )
     }
   }
