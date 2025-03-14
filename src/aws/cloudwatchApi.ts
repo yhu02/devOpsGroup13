@@ -1,10 +1,10 @@
-import { CloudWatch } from '@/lib/clients/CloudWatch'
-import { FormattedLogResult } from '@/types/AWS'
 import {
   CloudWatchLogsClient,
   GetQueryResultsCommand,
   StartQueryCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
+import { CloudWatch } from '../lib/clients/CloudWatch'
+import { FormattedLogResult } from '../types/AWS'
 interface CloudWatchQueryConfig {
   logGroupNames: string[]
   queryString: string
