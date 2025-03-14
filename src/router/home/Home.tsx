@@ -84,7 +84,7 @@ function Home() {
   const loadAwsData = async () => {
     setIsLoading(true)
     await resourceMetadata.mapResources()
-    setDependencies(resourceMetadata.getDependecies())
+    setDependencies(resourceMetadata.getDependencies())
     setResources(resourceMetadata.getAllResources())
     setIsLoading(false)
   }

@@ -6,7 +6,7 @@ import { AWS_IP_RANGES_URL, AwsIpRanges } from './cloudwatchApi'
 export class AwsIpRangeManager {
   private static instance: AwsIpRangeManager
   private initialized: boolean = false
-  private ranges: { prefix: string; parsed: any }[] = []
+  private ranges: { prefix: string; parsed: [ipaddr.IPv4 | ipaddr.IPv6, number] }[] = []
   private initPromise: Promise<void> | null = null
 
   private constructor() {}

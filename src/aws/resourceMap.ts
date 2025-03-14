@@ -30,7 +30,7 @@ export class ResourceMetaData {
   public addDependency(e: Dependency) {
     this.dependencies.push(e)
   }
-  public getDependecies(): Dependency[] {
+  public getDependencies(): Dependency[] {
     return this.dependencies
   }
 
