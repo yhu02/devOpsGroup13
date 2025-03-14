@@ -1,13 +1,16 @@
-import ipaddr from 'ipaddr.js'
 import { AWS_IP_RANGES_URL } from '@/types/AWS'
 import { AwsIpRanges } from '@/types/dnsAndIp'
+import ipaddr from 'ipaddr.js'
 
 // singleton class to manage AWS IP ranges
 
 export class AwsIpRangeManager {
   private static instance: AwsIpRangeManager
   private initialized: boolean = false
-  private ranges: { prefix: string; parsed: [ipaddr.IPv4 | ipaddr.IPv6, number] }[] = []
+  private ranges: {
+    prefix: string
+    parsed: [ipaddr.IPv4 | ipaddr.IPv6, number]
+  }[] = []
   private initPromise: Promise<void> | null = null
 
   private constructor() {}
