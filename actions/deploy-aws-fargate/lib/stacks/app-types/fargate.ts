@@ -609,7 +609,7 @@ function createFargateServiceAndALB(
       domainZone: hostedZone,
       recordType: ecs_patterns.ApplicationLoadBalancedServiceRecordType.NONE,
       listenerPort: loadBalancerPort,
-      enableExecuteCommand: environment === 'tst',
+      enableExecuteCommand: true,
       assignPublicIp: true,
     },
   );
@@ -651,7 +651,7 @@ function createFargateServiceWithExistingALB(
     },
     circuitBreaker: { rollback: ecsCircuitBreakerRollback },
     taskDefinition,
-    enableExecuteCommand: environment === 'tst',
+    enableExecuteCommand: true,
   });
   const applicationTargetGroup = new elbv2.ApplicationTargetGroup(stack, `${stack.appName}TargetGroup`, {
     port: targetGroupPort,
