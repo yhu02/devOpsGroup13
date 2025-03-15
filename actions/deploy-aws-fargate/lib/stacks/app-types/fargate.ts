@@ -583,7 +583,7 @@ function createFargateServiceAndALB(
   const publicSubnets = vpc.selectSubnets({
     subnetType: ec2.SubnetType.PUBLIC,
   });
-  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'HostedZone', {
+  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'HostedZone2', {
     hostedZoneId: '{{resolve:ssm:/platform/v1/dns/public/id}}',
     zoneName: '{{resolve:ssm:/platform/v1/dns/public/name}}',
   });
@@ -636,7 +636,7 @@ function createFargateServiceWithExistingALB(
   const ecsHealthCheckGracePeriod = stack.getIntFromContext('ecsHealthCheckGracePeriod');
   const alb = getReusableALB(stack);
   const albListener = getReusableALBListener(stack);
-  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'HostedZone', {
+  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'HostedZone3', {
     hostedZoneId: '{{resolve:ssm:/platform/v1/dns/public/id}}',
     zoneName: '{{resolve:ssm:/platform/v1/dns/public/name}}',
   });

@@ -49,17 +49,17 @@ jobs:
       - name: Build Vite Project
         run: npm run build
 
-      # - name: Create or update ECR repository
-      #   uses: ./actions/deploy-aws-ecr-repository
-      #   with:
-      #     account-id: ${{ steps.set.outputs.account-id }}
-      #     region: ${{ steps.set.outputs.region }}
-      #     stack-name: ECR-${{ steps.set.outputs.app-name }}
-      #     app-name: ${{ steps.set.outputs.app-name }}
-      #     environment: ${{ steps.set.outputs.environment }}
-      #     repository-name: ${{ steps.set.outputs.repository-name }}
-      #     immutable-tags: true
-      #     stackset: ecr
+      - name: Create or update ECR repository
+        uses: ./actions/deploy-aws-ecr-repository
+        with:
+          account-id: ${{ steps.set.outputs.account-id }}
+          region: ${{ steps.set.outputs.region }}
+          stack-name: ECR-${{ steps.set.outputs.app-name }}
+          app-name: ${{ steps.set.outputs.app-name }}
+          environment: ${{ steps.set.outputs.environment }}
+          repository-name: ${{ steps.set.outputs.repository-name }}
+          immutable-tags: true
+          stackset: ecr
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
