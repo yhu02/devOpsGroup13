@@ -1,6 +1,5 @@
 name: deploy-aws-fargate
 description: Create a stack for Fargate containers
-author: dploy
 
 inputs:
   app-name:
