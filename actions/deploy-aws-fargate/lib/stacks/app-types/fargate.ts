@@ -249,7 +249,6 @@ export function createFargateStack(stack: BatchFargateStack, props: FargateProps
       taskDefinition,
       targetGroupPort,
       props.ec2ALBListenerRulePrio,
-      props.environment,
       rdsSecurityGroup,
     ));
   } else {
@@ -261,7 +260,6 @@ export function createFargateStack(stack: BatchFargateStack, props: FargateProps
       taskDefinition,
       props.ecsHealthCheckGracePeriod,
       props.loadBalancerPort,
-      props.environment,
       rdsSecurityGroup,
     ));
   }
@@ -572,7 +570,6 @@ function createFargateServiceAndALB(
   taskDefinition: cdk.aws_ecs.FargateTaskDefinition,
   ecsHealthCheckGracePeriod: number,
   loadBalancerPort: number,
-  environment: string,
   rdsSecurityGroup?: cdk.aws_ec2.ISecurityGroup,
 ) {
   const useSpot = stack.getBooleanFromContext('useSpot');
@@ -629,7 +626,6 @@ function createFargateServiceWithExistingALB(
   taskDefinition: cdk.aws_ecs.FargateTaskDefinition,
   targetGroupPort: number,
   applicationListenerRuleLastPrio: number,
-  environment: string,
   rdsSecurityGroup?: cdk.aws_ec2.ISecurityGroup,
 ) {
   // PARAMETERS
