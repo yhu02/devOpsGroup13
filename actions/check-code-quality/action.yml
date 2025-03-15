@@ -1,0 +1,209 @@
+name: check-code-quality
+description: This action analyses and lints your code
+
+inputs:
+  language:
+    description: The used programming language, e.g. Python, R, TypeScript
+    default: Python
+  dependency-manager:
+    description: The dependency manager
+    required: true
+  quality-central:
+    description: Use our best practice settings for code quality
+    default: 'true'
+  verbose-output:
+    description: Use verbose output
+    default: 'false'
+  upload-results:
+    description: Upload the result to the Security tab of the repository
+    default: 'true'
+  continue-on-error:
+    default: 'true'
+    description: Whether to continue the workflow even if format check fails.
+  component-path:
+    description: A directory relative to the calling repository root, containing the source code this action should operate on
+    default: '.'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Pre-flight check non-empty inputs
+      shell: bash
+      run: | # shell
+        # Checking if required inputs are not empty
+        declare -A inputs=(
+          ["language"]="${{ inputs.language }}"
+          ["dependency-manager"]="${{ inputs.dependency-manager }}"
+          ["quality-central"]="${{ inputs.quality-central }}"
+          ["verbose-output"]="${{ inputs.verbose-output }}"
+          ["upload-results"]="${{ inputs.upload-results }}"
+          ["continue-on-error"]="${{ inputs.continue-on-error }}"
+          ["component-path"]="${{ inputs.component-path }}"
+
+        )
+
+        # Check each input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[$input]}"
+          if [ -z "$value" ]; then
+            echo "::error::'$input' is empty"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check boolean inputs
+      shell: bash
+      run: | # shell
+        # Checking if boolean inputs are 'true' or 'false'
+        declare -A inputs=(
+          ["quality-central"]="${{ inputs.quality-central }}"
+          ["verbose-output"]="${{ inputs.verbose-output }}"
+          ["upload-results"]="${{ inputs.upload-results }}"
+          ["continue-on-error"]="${{ inputs.continue-on-error }}"
+        )
+
+        # Iterate over each boolean input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[$input]}"
+          if [[ "$value" != "true" && "$value" != "false" ]]; then
+            echo "::error::'$input' must be 'true' or 'false'"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check list of values inputs
+      shell: bash
+      run: | # shell
+        # Checking if inputs are in a list of valid values
+        declare -A inputs=(
+          ["language"]="${{ inputs.language }}"
+          ["language_VALID_VALUES"]="Python, R, TypeScript"
+          ["dependency-manager"]="${{ inputs.dependency-manager }}"
+          ["dependency-manager_VALID_VALUES"]="poetry, npm, yarn, setuptools, uv"
+        )
+
+        # Check if the input is in the list of valid values
+        for input in "${!inputs[@]}"; do
+          # Skip the valid values entries
+          if [[ "$input" == *_VALID_VALUES ]]; then
+            continue
+          fi
+
+          value="${inputs[$input]}"
+          valid_values="${inputs[${input}_VALID_VALUES]}"
+          if [[ ! "$valid_values" =~ "$value" ]]; then
+            echo "::error::'$input' must be one of the following values: $valid_values, you specified $value"
+            exit 1
+          fi
+        done
+
+    - name: Add safedir for Git
+      shell: bash
+      run: |
+        git config --global --add safe.directory "$(pwd)"
+
+    - name: Prepare TypeScript
+      id: prepare-typescript
+      if: ${{ inputs.language == 'TypeScript' }}
+      shell: bash
+      working-directory: ${{ inputs.component-path }}
+      run: |
+        QUALITY_CENTRAL_ESLINT=false
+
+        case "${{ inputs.dependency-manager }}" in
+          npm)
+            if ! command -v npm &> /dev/null; then
+              echo "::error::npm is not installed, exiting.."
+              exit 1
+            fi
+            ;;
+          yarn)
+            if ! command -v yarn &> /dev/null; then
+              echo "::error::yarn is not installed, exiting.."
+              exit 1
+            fi
+            ;;
+          *)
+            echo "::error::unsupported typescript dependency-manager, exiting.."
+            exit 1
+            ;;
+        esac
+
+        # Check for a specific ESLint configuration, use our settings otherwise
+        if ! test -f eslint.config.mjs && ! test -f eslint.config.js && ! test -f eslint.config.cjs; then
+          echo "::warning::No ESLint config found, we will use our's settings"
+          QUALITY_CENTRAL_ESLINT=true
+        else
+          if [[ "${{ inputs.quality-central }}" == "true" ]]
+          then
+            echo "::warning::ESLINT config found, but you've set quality-central=true, so we'll be using our's settings instead"
+            QUALITY_CENTRAL_ESLINT=true
+          fi
+        fi
+
+        if [[ "$QUALITY_CENTRAL_ESLINT" == "true" ]]; then
+          \cp ${GITHUB_ACTION_PATH}/eslint.config.mjs .
+        fi
+
+        echo "quality-central-eslint=$QUALITY_CENTRAL_ESLINT" >> $GITHUB_OUTPUT
+
+    - name: Set message
+      id: set-message
+      shell: bash
+      working-directory: ${{ inputs.component-path }}
+      run: |
+        echo "warningMessage=::warning::Since you've chosen to follow our's settings, we will try to fix issues automatically. But please update your source code like above as well" >> $GITHUB_OUTPUT
+        echo "errorMessage=::error::Your code doesn't comply with your settings, please update your code like above or set 'quality-central: true' in your workflowfile and try again" >> $GITHUB_OUTPUT
+
+    - name: Run ESLint
+      if: ${{ inputs.language == 'TypeScript' }}
+      continue-on-error: ${{ fromJSON(inputs.continue-on-error) }}
+      env:
+        SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
+      working-directory: ${{ inputs.component-path }}
+      shell: bash
+      run: |
+        # Run ESLint twice to log; and to fix and save the results in a SARIF file
+        if [[ "${{steps.prepare-typescript.outputs.quality-central-eslint}}" == "true" ]]; then
+          echo "::warning:: You are using our's settings, we will try to fix issues automatically. Please remove your previous eslint configuration and/or make sure there are no dependency conflicts for the following packages eslint@^9.15.0 @eslint/compat@^1.2.3 @eslint/eslintrc@^3.2.0 @eslint/js@^9.15.0 globals@^15.12.0 typescript-eslint@^8.15.0 eslint-config-prettier@^9.1.0 eslint-plugin-import@^2.31.0 eslint-plugin-prettier@^5.2.1 @microsoft/eslint-formatter-sarif@^3.1.0"
+          if [[ "${{ inputs.dependency-manager }}" == "yarn" ]]; then
+            yarn add eslint@^9.15.0 @eslint/compat@^1.2.3 @eslint/eslintrc@^3.2.0 @eslint/js@^9.15.0 globals@^15.12.0 typescript-eslint@^8.15.0 eslint-config-prettier@^9.1.0 eslint-plugin-import@^2.31.0 eslint-plugin-prettier@^5.2.1 @microsoft/eslint-formatter-sarif@^3.1.0 --dev
+          else
+            npm install eslint@^9.15.0 @eslint/compat@^1.2.3 @eslint/eslintrc@^3.2.0 @eslint/js@^9.15.0 globals@^15.12.0 typescript-eslint@^8.15.0 eslint-config-prettier@^9.1.0 eslint-plugin-import@^2.31.0 eslint-plugin-prettier@^5.2.1 @microsoft/eslint-formatter-sarif@^3.1.0 --save-dev
+          fi
+        fi
+        if [[ "${{ inputs.dependency-manager }}" == "yarn" ]]; then
+          yarn eslint .
+        else
+          npx eslint .
+        fi
+
+    - name: Create eslint SARIF file
+      if: ${{ inputs.language == 'TypeScript' }}
+      continue-on-error: ${{ fromJSON(inputs.continue-on-error) }}
+      env:
+        SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
+      working-directory: ${{ inputs.component-path }}
+      shell: bash
+      run: |
+        # Run ESLint twice to log; and to fix and save the results in a SARIF file
+        if [[ "${{steps.prepare-typescript.outputs.quality-central-eslint}}" == "true" ]]; then
+          FIX_FLAG="--fix"
+        else
+          FIX_FLAG=""
+        fi
+        if [[ "${{ inputs.dependency-manager }}" == "yarn" ]]; then
+          yarn global add -g @microsoft/eslint-formatter-sarif@3.1.0
+          yarn eslint . --format $(yarn global dir)/node_modules/@microsoft/eslint-formatter-sarif/sarif.js --output-file eslint-results.sarif $FIX_FLAG
+        else
+          npm install -g @microsoft/eslint-formatter-sarif@3.1.0
+          npx eslint . --format $(npm root -g)/@microsoft/eslint-formatter-sarif/sarif.js --output-file eslint-results.sarif $FIX_FLAG
+        fi
+
+    - name: Upload analysis results to GitHub
+      if: ${{ (inputs.language == 'TypeScript') && fromJSON(inputs.upload-results) }}
+      continue-on-error: true
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.component-path }}/eslint-results.sarif
+        wait-for-processing: true

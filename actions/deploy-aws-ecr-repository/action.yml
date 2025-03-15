@@ -1,6 +1,5 @@
 name: deploy-aws-ecr-repository
 description: This action creates or updates an ECR repository in the specified AWS Account
-author: dploy
 
 inputs:
   account-id:

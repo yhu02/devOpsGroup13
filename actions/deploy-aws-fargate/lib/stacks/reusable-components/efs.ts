@@ -27,7 +27,7 @@ export function createEcsVolumeIfUsingEFS(stack: BatchFargateStack, useEFS: bool
     fileSystemId,
     accessPointTags: [
       { key: 'Type', value: 'Application' },
-      { key: 'DeployedBy', value: 'Autobahn' },
+      { key: 'DeployedBy', value: 'gha' },
     ],
     posixUser: {
       gid: '0',
