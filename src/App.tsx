@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Route, BrowserRouter as Router, Routes } from 'react-router'
 import SideBar from './components/SideBar'
+import HealthCheck from './components/HealthCheck'
 
 // Lazy load route components
 const NotFound = lazy(() => import('./components/NotFound'))
@@ -17,6 +18,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/about" element={<About />} />
+              <Route path="/health" element={<HealthCheck />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
