@@ -32,3 +32,9 @@ dist-ssr
 # Dependecies!
 /.vite/deps/*
 
+
+TODOS.md
+
+# Playwright
+test-results
+playwright-report

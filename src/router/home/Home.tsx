@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { DataSet } from 'vis-data'
 import { Network } from 'vis-network'
 import 'vis-network/styles/vis-network.css'
+import { ResourceMetaData } from '../../aws/resourceMap'
 import type { AwsResource, Dependency } from '../../types/AWS'
 import { resourceVisuals } from '../../utils/AWSVisuals'
 import { GetNetworkSettings } from '../../utils/getNetworkSettings'
-import { ResourceMetaData } from '../../aws/resourceMap'
 
 // Define your own type for edges with an optional "id"
 interface GraphEdge {
