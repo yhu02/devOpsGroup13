@@ -47,6 +47,7 @@ jobs:
         uses: ./actions/check-code-quality
         with:
           language: TypeScript
+          dependency-manager: npm
 
       - name: Install Dependencies
         run: npm install
