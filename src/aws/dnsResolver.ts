@@ -1,15 +1,6 @@
+import type { DnsResponse } from '@/types/dnsAndIp'
 import { AwsIpRangeManager } from './awsIpRangeManager'
 import { ResourceMetaData } from './resourceMap'
-
-interface DnsResponse {
-  Status: number
-  Answer?: {
-    name: string
-    type: number
-    TTL: number
-    data: string
-  }[]
-}
 
 /**
  * Class that creates a singleton DNS Resolver.
@@ -122,6 +113,7 @@ export class DnsResolver {
   }
 }
 
+// Retrieve DNS info for a set of IPs
 export async function retrieveDNSInfo(uniqueIps: Set<string>) {
   const dnsResolver = DnsResolver.getInstance()
   const resourceMetadata = ResourceMetaData.getInstance()

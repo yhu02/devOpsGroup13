@@ -1,10 +1,8 @@
-import { AwsResource, Dependency, FormattedLogResult } from '@/types/AWS'
+import { AWS_SERVICES_ID, AwsResource, Dependency, FormattedLogResult } from '@/types/AWS'
 import { getVPCFlowLogs } from './cloudwatchApi'
 import { AwsIpRangeManager } from './awsIpRangeManager'
 import { retrieveDNSInfo } from './dnsResolver'
 import { describe_ec2s} from './resources-in-vpc'
-const AWS_SERVICES_ID = 'aws-services'
-
 export class ResourceMetaData {
   private static instance: ResourceMetaData
   private resourceMap: Map<string, AwsResource>
@@ -43,10 +41,10 @@ export class ResourceMetaData {
   public getResourceMap(): Map<string, AwsResource> {
     return this.resourceMap
   }
-  public resourceCount(): Number {
+  public resourceCount(): number {
     return this.resourceMap.size
   }
-  public dependencyCount(): Number {
+  public dependencyCount(): number {
     return this.dependencies.length
   }
   public hasResource(key: string): Boolean {
