@@ -19,9 +19,20 @@ At a minimum, the project will deliver:
 # Additional Feature (Optional):
 Explainability in Dependency Mapping – Providing insights into how and why cloud resources are interlinked.
 
-# Dockerfile
+# Local installation using Dockerfile
 docker build -t cloudvisualizer .
 docker run -p 5173:5173 cloudvisualizer
+
+# Deployment in AWS
+Clone this repo
+Configure AWS OIDC for automatic deployment
+Create a VPC
+Add the VPC id to /platform/v1/vpc/id in SSM
+Create a Hosted Zone
+Add the Hosted Zone name to /platform/v1/dns/public/name in SSM
+Add the Hosted Zone id to /platform/v1/dns/public/id in SSM
+Deploy using the pipeline, and view the running ecs container using the AWS console
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
