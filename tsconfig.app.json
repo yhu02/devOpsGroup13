@@ -26,7 +26,9 @@
       "@components/*": ["./src/components/*"],
       "@utils/*": ["./src/utils/*"],
       "@types/*": ["./src/types/*"],
-      "@router/*": ["./src/router/*"]
+      "@router/*": ["./src/router/*"],
+      "@aws/*": ["./src/aws/*"],
+      "@lib/*": ["./src/lib/*"]
     }
   },
   "include": ["src"]
