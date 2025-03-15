@@ -115,13 +115,13 @@ export async function retrieveDNSInfo(uniqueIps: Set<string>) {
   const dnsResolutionPromises: Promise<void>[] = []
   const awsIpChecker = AwsIpRangeManager.getInstance()
   await awsIpChecker.initialize()
-  // keep track of unique ips that we are processing to ensure we are not entering an ip into the queue multiple times 
+  // keep track of unique ips that we are processing to ensure we are not entering an ip into the queue multiple times
   const processingIps = new Set<string>()
-  
+
   for (const ip of uniqueIps) {
     if (!awsIpChecker.isAwsIp(ip) && !resourceMetadata.hasResource(ip) && !processingIps.has(ip)) {
       processingIps.add(ip)
-      
+
       dnsResolutionPromises.push(
         dnsResolver.resolveIp(ip).then((hostname) => {
           const name = dnsResolver.getResourceName(ip, hostname)
