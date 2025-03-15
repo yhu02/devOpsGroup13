@@ -60,7 +60,7 @@ inputs:
     default: 'false'
   apim-host:
     description: The APIM endpoint
-    default: api.alliander.com
+    default: api.apim.com
   extra-ssm-env-path:
     description: The path to additional SSM parameters to include in the environment variables
     default: ''
@@ -329,10 +329,7 @@ runs:
     - name: Set up Node.js 20.x
       uses: actions/setup-node@v4
       with:
-        always-auth: true
         node-version: 20.x
-        registry-url: https://npm.pkg.github.com
-        scope: "@alliander"
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4

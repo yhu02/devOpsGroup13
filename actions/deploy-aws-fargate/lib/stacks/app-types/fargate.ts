@@ -577,13 +577,13 @@ function createFargateServiceAndALB(
 ) {
   const useSpot = stack.getBooleanFromContext('useSpot');
   const ecsCapacityProviderFargate = useSpot ? 'FARGATE_SPOT' : 'FARGATE';
-  const vpc = ec2.Vpc.fromLookup(stack, 'AllianderVPC', {
+  const vpc = ec2.Vpc.fromLookup(stack, 'VPC2', {
     vpcId: ssm.StringParameter.valueFromLookup(stack, '/platform/v1/vpc/id'),
   });
   const publicSubnets = vpc.selectSubnets({
     subnetType: ec2.SubnetType.PUBLIC,
   });
-  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'AllianderHostedZone', {
+  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'HostedZone', {
     hostedZoneId: '{{resolve:ssm:/platform/v1/dns/public/id}}',
     zoneName: '{{resolve:ssm:/platform/v1/dns/public/name}}',
   });
@@ -636,7 +636,7 @@ function createFargateServiceWithExistingALB(
   const ecsHealthCheckGracePeriod = stack.getIntFromContext('ecsHealthCheckGracePeriod');
   const alb = getReusableALB(stack);
   const albListener = getReusableALBListener(stack);
-  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'AllianderHostedZone', {
+  const hostedZone = route53.HostedZone.fromHostedZoneAttributes(stack, 'HostedZone', {
     hostedZoneId: '{{resolve:ssm:/platform/v1/dns/public/id}}',
     zoneName: '{{resolve:ssm:/platform/v1/dns/public/name}}',
   });
