@@ -10,9 +10,9 @@ import { CdkGraphDiagramPlugin } from '@aws/pdk/cdk-graph-plugin-diagram';
   const app = new cdk.App({
     // Setting default context variables in the CDK App (can be overridden via --context argument in cli)
     context: {
-      stackName: 'autobahn-fahrgestell-test-python-streamlit',
+      stackName: 'fahrgestell-test-python-streamlit',
       rollBack: 'true',
-      appName: 'autobahn-fahrgestell-test-python-streamlit',
+      appName: 'fahrgestell-test-python-streamlit',
       appType: 'streamlit',
       baseImagesAccountId: '767398142180',
       useSpot: 'true',

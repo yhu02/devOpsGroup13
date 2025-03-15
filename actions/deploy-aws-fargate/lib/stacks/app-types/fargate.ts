@@ -22,7 +22,7 @@ import { getOrCreateLogGroup } from '../reusable-components/logGroup';
 import { createTaskRole } from '../reusable-components/taskRole';
 export const DEFAULT_AWS_REGION = 'eu-central-1';
 
-interface AutobahnFargateProps {
+interface FargateProps {
   expose2APIM: boolean;
   reuseALB: boolean;
   useEFS: boolean;
@@ -75,7 +75,7 @@ interface AutobahnFargateProps {
   repositoryName: string;
 }
 
-export function createFargateStack(stack: BatchFargateStack, props: AutobahnFargateProps) {
+export function createFargateStack(stack: BatchFargateStack, props: FargateProps) {
   // Common resources (batch/fargate)
   const vpc = ec2.Vpc.fromLookup(stack, 'VPC', {
     vpcId: ssm.StringParameter.valueFromLookup(stack, '/platform/v1/vpc/id'),

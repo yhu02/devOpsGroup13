@@ -27,12 +27,12 @@ export class BatchFargateStack extends cdk.Stack {
       // useNginxProxy when shiny
       if (this.appType === 'shiny' || this.appType === 'shiny-task') {
         useNginxProxy = true;
-        NginxProxyImage = `${baseImagesAccountId}.dkr.ecr.eu-central-1.amazonaws.com/autobahn/proxy-r-shiny-alpine-latest:latest`;
+        NginxProxyImage = `${baseImagesAccountId}.dkr.ecr.eu-central-1.amazonaws.com/proxy-r-shiny-alpine-latest:latest`;
       }
 
       if (this.appType === 'streamlit' || this.appType === 'streamlit-task') {
         useNginxProxy = true;
-        NginxProxyImage = `${baseImagesAccountId}.dkr.ecr.eu-central-1.amazonaws.com/autobahn/proxy-python-streamlit-alpine-latest:latest`;
+        NginxProxyImage = `${baseImagesAccountId}.dkr.ecr.eu-central-1.amazonaws.com/proxy-python-streamlit-alpine-latest:latest`;
       }
 
       createFargateStack(this, {

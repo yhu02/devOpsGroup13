@@ -1,0 +1,24 @@
+output-format = "github"
+line-length = 120
+show-fixes = true
+
+[lint]
+select = [
+    # pycodestyle
+    "E",
+    # Pyflakes
+    "F",
+    # pyupgrade
+    "UP",
+    # flake8-bugbear
+    "B",
+    # flake8-simplify
+    "SIM",
+    # isort
+    "I",
+    # Numpy 2.0 downstream : https://numpy.org/devdocs/numpy_2_0_migration_guide.html
+    "NPY201",
+]
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
