@@ -1,7 +1,7 @@
 name: Deploy Vite Project using CDK (TypeScript)
 
 on:
-  push:
+  pull_request_target:
     branches:
       - main
   workflow_dispatch:
