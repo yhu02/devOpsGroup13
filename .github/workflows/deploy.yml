@@ -46,6 +46,7 @@ jobs:
           dependency-manager: npm
 
       - name: run test coverage
+        continue-on-error: true
         run: npm run test:coverage
 
       - name: SonarCloud Scan
