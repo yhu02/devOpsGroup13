@@ -2,7 +2,15 @@ import type { DnsResponse } from '@/types/dnsAndIp'
 import { AwsIpRangeManager } from './awsIpRangeManager'
 import { ResourceMetaData } from './resourceMap'
 
-class DnsResolver {
+/**
+ * Class that creates a singleton DNS Resolver.
+ * We can use it to do a few things:
+ * 1. Resolve an IP to a hostname
+ * 2. Get the resource name for an IP
+ *
+ *
+ */
+export class DnsResolver {
   private static instance: DnsResolver
   private cache: Map<string, string> = new Map()
   private pendingRequests: Map<string, Promise<string>> = new Map()
