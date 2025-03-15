@@ -155,3 +155,4 @@ jobs:
           reuse-alb: false
           main-entrypoint: npm run preview
           container-port: 5173
+          container-health-check-cmd: "curl -f http://localhost:5173"
