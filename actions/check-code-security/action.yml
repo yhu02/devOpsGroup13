@@ -1,0 +1,239 @@
+name: check-code-security
+description: This action performs security checks on the calling repo.
+
+inputs:
+  language:
+    description: The used programming language, e.g. Python, R, TypeScript, Java
+    default: Python
+  recursive-scan:
+    description: If true, scan all subfolders for dependency files
+    default: 'true'
+  upload-results:
+    description: Upload the result to the Security tab of the repository
+    default: 'true'
+  dependency-manager:
+    description: The used dependency manager, e.g. poetry, setuptools
+    default: poetry
+  github-repository:
+    description: The GitHub repository to scan
+    default: ${{ github.repository }}
+  component-path:
+    description: A directory relative to the calling repository root, containing the source code this action should operate on
+    default: '.'
+  severity-level:
+    description: The level of the scan
+    default: 'high'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Pre-flight check non-empty inputs
+      shell: bash
+      run: | # shell
+        # Checking if required inputs are not empty
+        declare -A inputs=(
+          ["language"]="${{ inputs.language }}"
+          ["recursive-scan"]="${{ inputs.recursive-scan }}"
+          ["upload-results"]="${{ inputs.upload-results }}"
+          ["dependency-manager"]="${{ inputs.dependency-manager }}"
+          ["github-repository"]="${{ inputs.github-repository }}"
+          ["component-path"]="${{ inputs.component-path }}"
+          ["severity-level"]="${{ inputs.severity-level }}"
+        )
+
+        # Check each input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[$input]}"
+          if [ -z "$value" ]; then
+            echo "::error::'$input' is empty"
+            exit 1
+          fi
+        done
+
+    - name: Pre-flight check boolean inputs
+      shell: bash
+      run: | # shell
+        # Checking if boolean inputs are 'true' or 'false'
+        declare -A inputs=(
+          ["recursive-scan"]="${{ inputs.recursive-scan }}"
+          ["upload-results"]="${{ inputs.upload-results }}"
+        )
+
+        # Iterate over each boolean input
+        for input in "${!inputs[@]}"; do
+          value="${inputs[$input]}"
+          if [[ "$value" != "true" && "$value" != "false" ]]; then
+            echo "::error::'$input' must be 'true' or 'false'"
+            exit 1
+          fi
+        done
+    
+    - name: Pre-flight check list of values inputs
+      shell: bash
+      run: | # shell
+        # Checking if inputs are in a list of valid values
+        declare -A inputs=(
+          ["language"]="${{ inputs.language }}"
+          ["language_VALID_VALUES"]="Python, R, TypeScript, Java"
+          ["dependency-manager"]="${{ inputs.dependency-manager }}"
+          ["dependency-manager_VALID_VALUES"]="poetry, npm, yarn, setuptools, uv"
+          ["severity-level"]="${{ inputs.severity-level }}"
+          ["severity-level_VALID_VALUES"]="critical, high, moderate, low, none"
+        )
+
+        # Check if the input is in the list of valid values
+        for input in "${!inputs[@]}"; do
+          # Skip the valid values entries
+          if [[ "$input" == *_VALID_VALUES ]]; then
+            continue
+          fi
+
+          value="${inputs[$input]}"
+          valid_values="${inputs[${input}_VALID_VALUES]}"
+          if [[ ! "$valid_values" =~ "$value" ]]; then
+            echo "::error::'$input' must be one of the following values: $valid_values, you specified $value"
+            exit 1
+          fi
+        done
+
+      #Response that is not of type array indicates that Advanced Security is not enabled
+    - name: Check if GitHub Advanced security is enabled by checking code scanning alerts
+      shell: bash
+      id: check-ghas
+      if: ${{ github.event_name == 'pull_request' }}
+      continue-on-error: true
+      run: |
+        response=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+                  -H "Authorization: token ${{ env.GH_TOKEN }}" \
+                  https://api.github.com/repos/${{ inputs.github-repository }}/code-scanning/alerts)
+
+        echo "Response: $response"
+                  
+        is_array=$(echo "$response" | jq -e 'if type == "array" then true else false end')
+
+        if [ "$is_array" = "true" ]; then
+          echo "ghas-enabled=true" >> $GITHUB_OUTPUT
+          echo "::notice::Successfully retrieved code scanning alerts"
+        else
+          echo "::notice::Advanced Security must be enabled for this repository to use code scanning. Skipping the rest of the action."
+          echo "ghas-enabled=false" >> $GITHUB_OUTPUT
+          echo "::notice::Failed to retrieve code scanning alerts"
+        fi
+
+    - name: Initialize CodeQL
+      if: ${{ steps.check-ghas.outputs.ghas-enabled == 'true' }}
+      continue-on-error: true
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ inputs.language }}
+
+    - name: Autobuild
+      if: ${{ steps.check-ghas.outputs.ghas-enabled == 'true' }}
+      continue-on-error: true
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      id: codeql
+      if: ${{ steps.check-ghas.outputs.ghas-enabled == 'true' }}
+      continue-on-error: true
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{inputs.language}}"
+        token: ${{ env.GH_TOKEN }}
+        upload: ${{ fromJSON(inputs.upload-results) }}
+    
+    - name: Audit NPM Dependencies
+      if: ${{ inputs.language == 'TypeScript' }}
+      shell: bash
+      working-directory: ${{ inputs.component-path }}
+      run: |
+        # Function to parse npm audit JSON output
+        parse_npm_audit() {
+          critical=$(echo "${audit_output}" | jq '.metadata.vulnerabilities.critical')
+          high=$(echo "${audit_output}" | jq '.metadata.vulnerabilities.high')
+          moderate=$(echo "${audit_output}" | jq '.metadata.vulnerabilities.moderate')
+          low=$(echo "${audit_output}" | jq '.metadata.vulnerabilities.low')
+        }
+
+        # Function to parse yarn audit JSON output
+        parse_yarn_audit() {
+          critical=$(echo "${audit_output}" | jq '.data.vulnerabilities.critical')
+          high=$(echo "${audit_output}" | jq '.data.vulnerabilities.high')
+          moderate=$(echo "${audit_output}" | jq '.data.vulnerabilities.moderate')
+          low=$(echo "${audit_output}" | jq '.data.vulnerabilities.low')
+        }
+
+        # Function to check vulnerabilities based on the levelcheck_vulnerabilities() {
+        check_vulnerabilities() {
+          echo "Checking vulnerabilities for level: ${level}"
+
+          if [ "${level}" == "critical" ]; then
+            # Check only for critical vulnerabilities
+            if [ "${critical}" -gt 0 ]; then
+                return 1
+            fi
+          elif [ "${level}" == "high" ]; then
+            # Check for high or critical vulnerabilities
+            if [ "${high}" -gt 0 ] || [ "${critical}" -gt 0 ]; then
+                return 1
+            fi
+          elif [ "${level}" == "moderate" ]; then
+            # Check for moderate, high, or critical vulnerabilities
+            if [ "${moderate}" -gt 0 ] || [ "${high}" -gt 0 ] || [ "${critical}" -gt 0 ]; then
+                return 1
+            fi
+          elif [ "${level}" == "low" ]; then
+            # Check for low, moderate, high, or critical vulnerabilities simultaneously
+            if [ "${low}" -gt 0 ] || [ "${moderate}" -gt 0 ] || [ "${high}" -gt 0 ] || [ "${critical}" -gt 0 ]; then
+                return 1
+            fi
+          elif [ "${level}" == "none" ]; then  
+            # If level is 'none', no action required
+            return 0
+          else
+            echo "Invalid level provided."
+            # Invalid level provided
+            return 1
+          fi
+          return 0
+        }
+
+        # Main audit function
+        audit_vulnerabilities() {
+          # Check if package manager and vulnerability level are passed as arguments
+          if [ -z "${1}" ] || [ -z "${2}" ]; then
+            echo "Error: package_manager and level are required."
+            return 1
+          fi
+
+          package_manager="${1}"
+          level="${2}"
+
+          # Run the audit command and get the output in JSON format
+          if [ "${package_manager}" == "yarn" ]; then
+            audit_output=$(yarn audit --json || true | tail -n 1)
+          elif [ "${package_manager}" == "npm" ]; then
+            audit_output=$(npm audit --json || true)
+          else
+            echo "Invalid package manager specified. Use 'npm' or 'yarn'."
+            return 1
+          fi
+
+          # Parse the audit output based on the package manager
+          if [ "${package_manager}" == "npm" ]; then
+            parse_npm_audit
+          elif [ "${package_manager}" == "yarn" ]; then
+            parse_yarn_audit
+          fi
+
+          echo "Critical vulnerabilities: ${critical}"
+          echo "High vulnerabilities: ${high}"
+          echo "Moderate vulnerabilities: ${moderate}"
+          echo "Low vulnerabilities: ${low}"
+
+          check_vulnerabilities
+          
+          echo "Vulnerability threshold (${level}) not crossed."
+        }
+
+        audit_vulnerabilities ${{ inputs.dependency-manager }} ${{ inputs.severity-level }}

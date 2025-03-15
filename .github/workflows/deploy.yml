@@ -45,6 +45,13 @@ jobs:
           language: TypeScript
           dependency-manager: npm
 
+      - name: check-code-security
+        uses: ./actions/check-code-security
+        with:
+          language: TypeScript
+          dependency-manager: npm
+          severity-level: none
+
       - name: run test coverage
         continue-on-error: true
         run: npm run test:coverage
