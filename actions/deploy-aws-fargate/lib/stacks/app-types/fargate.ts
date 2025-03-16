@@ -196,11 +196,9 @@ export function createFargateStack(stack: BatchFargateStack, props: FargateProps
   // Allow ECS exec to work on the container
   // https://github.com/aws/containers-roadmap/issues/1359
   // Only root should be able to ECS exec on the container, so appuser doesn't have to have permissions to these paths
-  if(props.environment === 'tst') {
-    createAndMountVolume([mainContainer], 'var-lib-amazon-ssm', '/var/lib/amazon/ssm');
-    createAndMountVolume([mainContainer], 'var-log-amazon-ssm', '/var/log/amazon/ssm');
-    createAndMountVolume([mainContainer], 'managed-agents', '/managed-agents');
-  }
+  createAndMountVolume([mainContainer], 'var-lib-amazon-ssm', '/var/lib/amazon/ssm');
+  createAndMountVolume([mainContainer], 'var-log-amazon-ssm', '/var/log/amazon/ssm');
+  createAndMountVolume([mainContainer], 'managed-agents', '/managed-agents');
 
   // create a new security group for the ECS task
   // Because we can't add extra SG's later, see: https://github.com/aws/aws-cdk/issues/5635
