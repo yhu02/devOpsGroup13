@@ -60,9 +60,9 @@ export class CloudWatchQuery {
 }
 
 export async function getVPCFlowLogs(): Promise<FormattedLogResult[]> {
-  const client = CloudWatch.getInstance();
+  const client = CloudWatch.getInstance(awsConfig);
 
-  const query = new CloudWatchQuery(client, {
+  const queryConfig: CloudWatchQueryConfig = {
     logGroupNames: ['/aws/vpc/test-flow-logs'],
     queryString: `
       fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
@@ -72,7 +72,9 @@ export async function getVPCFlowLogs(): Promise<FormattedLogResult[]> {
     startTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     endTime: new Date(),
     limit: 300,
-  });
+  };
+
+  const query = new CloudWatchQuery(client, queryConfig);
 
   try {
     return await query.run();
