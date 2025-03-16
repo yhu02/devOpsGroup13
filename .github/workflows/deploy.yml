@@ -62,12 +62,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Vite Project
-        run: npm run build
-
       - name: Create or update ECR repository
         uses: ./actions/deploy-aws-ecr-repository
         with:
@@ -160,6 +154,5 @@ jobs:
           image-version: ${{ steps.set.outputs.image-version }}
           repository-name: ${{ steps.set.outputs.repository-name }}
           reuse-alb: false
-          main-entrypoint: npm run preview
-          container-port: 5173
-          container-health-check-cmd: "curl -f http://localhost:5173"
+          container-health-check-cmd: "curl -f http://localhost:3000/api/health || exit 1"
+          main-entrypoint: npm run start
