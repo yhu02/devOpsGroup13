@@ -19,9 +19,15 @@ At a minimum, the project will deliver:
 # Additional Feature (Optional):
 Explainability in Dependency Mapping – Providing insights into how and why cloud resources are interlinked.
 
+# Local instlalation on host machine
+# Frontend is served as static files via backend
+cd frontend; npm run build
+cd backend; npm run build
+cd backend; npm run start
+
 # Local installation using Dockerfile
 docker build -t cloudvisualizer .
-docker run -p 5173:5173 cloudvisualizer
+docker run -p 3000:3000 cloudvisualizer
 
 # Deployment in AWS
 Clone this repo
