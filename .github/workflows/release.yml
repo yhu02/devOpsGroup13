@@ -1,0 +1,88 @@
+name: Semantic Versioning Release
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - release
+
+jobs:
+  release:
+    name: Release
+    runs-on: [self-hosted, X64, Linux, minimal]
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
+      - uses: actions/checkout@v4.2.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Configure Semantic Release
+        run: |
+          echo '{
+            "branches": [
+              "main",
+              {
+                "name": "develop",
+                "prerelease": "beta"
+              },
+              {
+                "name": "release",
+                "prerelease": "rc"
+              }
+            ],
+            "plugins": [
+              "@semantic-release/commit-analyzer",
+              "@semantic-release/release-notes-generator",
+              "@semantic-release/github"
+            ]
+          }' > .releaserc.json
+          
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dump release outputs
+        env:
+          RELEASE_OUTPUTS: ${{ toJson(steps.semantic.outputs) }}
+        run: echo "$RELEASE_OUTPUTS"
+          
+  merge:
+    name: Merge main into develop and release
+    runs-on: [self-hosted, X64, Linux, minimal]
+    needs: release
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Fetch all branches
+        run: git fetch --all
+ 
+      - name: Merge main into develop
+        run: |
+          if git ls-remote --exit-code --heads origin develop; then
+            git checkout develop
+          else
+            git checkout -b develop origin/main
+          fi
+
+          git merge origin/main --no-edit --allow-unrelated-histories
+          git push origin develop
+
+      - name: Merge main into release
+        run: |
+          if git ls-remote --exit-code --heads origin release; then
+            git checkout release
+          else
+            git checkout -b release origin/main
+          fi
+
+          git merge origin/main --no-edit --allow-unrelated-histories
+          git push origin release
