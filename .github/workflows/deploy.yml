@@ -157,3 +157,4 @@ jobs:
           container-health-check-cmd: "curl -f http://localhost:3000/api/health || exit 1"
           main-entrypoint: npm run start
           target-group-health-check-path: /api/health
+          container-port: 3000
