@@ -62,7 +62,7 @@ export class CloudWatchQuery {
 export async function getVPCFlowLogs(): Promise<FormattedLogResult[]> {
   const client =  import.meta.env.VITE_ENVIRONMENT == 'tst'
     ? CloudWatch.getInstance(awsConfig)
-    : CloudWatch.getInstance({}); 
+    : CloudWatch.getInstance({region: awsConfig.region}); 
 
   const queryConfig: CloudWatchQueryConfig = {
     logGroupNames: ['/aws/vpc/test-flow-logs'],
