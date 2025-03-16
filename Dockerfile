@@ -1,25 +1,29 @@
 # Stage 1: Build the frontend
 FROM node:20-alpine AS frontend-builder
+WORKDIR /usr/src/app
+
+# Copy the entire monorepo structure
+COPY shared ./shared
+COPY frontend ./frontend
+COPY backend ./backend
+
+# Change into the frontend directory and install/build
 WORKDIR /usr/src/app/frontend
-
-# Copy package files and install dependencies
-COPY frontend/package*.json ./
 RUN npm install
-
-# Copy the rest of the source code and build the frontend
-COPY frontend ./
 RUN npm run build
 
 # Stage 2: Build the backend
 FROM node:20-alpine AS backend-builder
+WORKDIR /usr/src/app
+
+# Copy the shared folder and backend folder (needed for relative imports)
+COPY shared ./shared
+COPY backend ./backend
+
+# Change into the backend directory, install dependencies, and build the backend
 WORKDIR /usr/src/app/backend
-
-# Copy package files and install dependencies
-COPY backend/package*.json ./
 RUN npm install
-
-# Copy the backend source code
-COPY backend ./
+RUN npm run build
 
 # Stage 3: Create the production image
 FROM node:20-alpine
@@ -29,9 +33,11 @@ WORKDIR /usr/src/app
 COPY backend/package*.json ./backend/
 RUN cd backend && npm install --production
 
-# Copy built frontend and backend from previous stages
+# Copy built assets from previous stages
+# The frontend build output will be in /usr/src/app/frontend/dist
+# The backend build output will be in /usr/src/app/backend/dist
 COPY --from=frontend-builder /usr/src/app/frontend/dist ./frontend/dist
-COPY --from=backend-builder /usr/src/app/backend ./backend
+COPY --from=backend-builder /usr/src/app/backend/dist ./backend/dist
 
 # Expose backend API port
 EXPOSE 3000
