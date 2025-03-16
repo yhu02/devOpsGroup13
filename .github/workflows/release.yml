@@ -9,7 +9,7 @@ on:
 jobs:
   release:
     name: Release
-    runs-on: [self-hosted, X64, Linux, minimal]
+    runs-on: ubuntu-latest
     steps:
       - name: Dump GitHub context
         env:
@@ -56,7 +56,7 @@ jobs:
           
   merge:
     name: Merge main into develop and release
-    runs-on: [self-hosted, X64, Linux, minimal]
+    runs-on: ubuntu-latest
     needs: release
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
