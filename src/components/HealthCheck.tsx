@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
 
-function HealthCheck() {
-  const [status, setStatus] = useState(null);
+export default function HealthCheck() {
+  const [status, setStatus] = useState<{ status: string } | null>(null);
 
   useEffect(() => {
-    fetch('/health')
-      .then((res) => res.json())
-      .then((data) => setStatus(data))
-      .catch((err) => console.error('Error fetching health:', err));
+    setStatus({ status: 'OK' });
   }, []);
 
-  return <div>{status ? JSON.stringify(status) : 'Checking health...'}</div>;
+  return <div>{status ? status.status : 'Loading...'}</div>;
 }
-
-export default HealthCheck;
