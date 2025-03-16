@@ -31,8 +31,8 @@ function Home() {
         id: res.id,
         label: res.name,
         shape: resourceVisuals[res.type]?.icon ? 'image' : 'ellipse',
-        image: resourceVisuals[res.type]?.icon,
-        color: resourceVisuals[res.type]?.color,
+        image: resourceVisuals[res.type]?.icon ?? undefined,
+        color: resourceVisuals[res.type]?.color ?? '#ADD8E6',
       }))
       // Use the local 'GraphEdge' type
       const edgeData: GraphEdge[] = dependencies.map((dep) => ({

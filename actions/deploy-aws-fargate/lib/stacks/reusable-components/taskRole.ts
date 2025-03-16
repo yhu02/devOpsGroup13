@@ -14,23 +14,26 @@ export function createTaskRole(stack: BatchFargateStack): iam.IRole {
     assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
   });
 
+  // Add AWS managed ReadOnlyAccess policy
   taskRole.addManagedPolicy(
-    new iam.ManagedPolicy(stack, `${appName}S3Policy`, {
+    iam.ManagedPolicy.fromAwsManagedPolicyName('ReadOnlyAccess')
+  );
+
+  // Add custom S3 write policy
+  taskRole.addManagedPolicy(
+    new iam.ManagedPolicy(stack, `${appName}S3WritePolicy`, {
       document: new iam.PolicyDocument({
         statements: [
           new iam.PolicyStatement({
             actions: [
-              's3:GetObject',
-              's3:ListBucket',
-              's3:ListBucketMultipartUploads',
-              's3:ListMultipartUploadParts',
               's3:PutObject',
               's3:DeleteObject',
             ],
             resources: [
-              `arn:aws:s3:::${appName}*`, // Bucket ARN
-              `arn:aws:s3:::${appName}*/**`, // Object ARNs
+              `arn:aws:s3:::${appName}*`,
+              `arn:aws:s3:::${appName}*/*`,
             ],
+            effect: iam.Effect.ALLOW,
           }),
         ],
       }),
