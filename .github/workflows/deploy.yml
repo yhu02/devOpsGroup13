@@ -154,5 +154,5 @@ jobs:
           image-version: ${{ steps.set.outputs.image-version }}
           repository-name: ${{ steps.set.outputs.repository-name }}
           reuse-alb: false
-          main-entrypoint: npm run preview
-          container-port: 3000
+          container-health-check-cmd: "curl -f http://localhost:3000/api/health || exit 1"
+          main-entrypoint: npm run start
