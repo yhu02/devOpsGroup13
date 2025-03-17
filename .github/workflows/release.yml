@@ -82,7 +82,6 @@ jobs:
             git checkout -b develop origin/main
           fi
 
-          git merge origin/main --no-edit --allow-unrelated-histories
           git rebase origin/main
           git push -f origin develop
 
@@ -94,6 +93,5 @@ jobs:
             git checkout -b release origin/main
           fi
 
-          git merge origin/main --no-edit --allow-unrelated-histories
           git rebase origin/main
           git push -f origin release
