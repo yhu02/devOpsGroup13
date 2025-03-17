@@ -1,30 +1,42 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseService } from './database/database.service';
 
 describe('AppController', () => {
   let appController: AppController;
+  let appService: Partial<AppService>;
+  let dbService: Partial<DatabaseService>;
 
-  beforeEach(async () => {
-    const mockDatabaseService = {
-      query: jest.fn().mockResolvedValue({ rows: [] }), // Mock query method
+  beforeEach(() => {
+    // Create mocks for AppService and DatabaseService
+    appService = {
+      getHealth: vi.fn().mockReturnValue({ status: 'ok' }),
     };
 
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-      providers: [
-        AppService,
-        { provide: DatabaseService, useValue: mockDatabaseService }, // Mock DatabaseService
-      ],
-    }).compile();
+    dbService = {
+      query: vi.fn().mockResolvedValue({
+        rows: [{ current_database: 'test_db' }],
+      }),
+    };
 
-    appController = app.get<AppController>(AppController);
+    // Instantiate the controller with the mocked services
+    appController = new AppController(appService as AppService, dbService as DatabaseService);
   });
 
-  describe('root', () => {
-    it('should return "I am healthy!"', () => {
-      expect(appController.getHealth()).toBe('I am healthy!');
+  describe('getHealth', () => {
+    it('should return the health status from the app service', () => {
+      const result = appController.getHealth();
+      expect(appService.getHealth).toHaveBeenCalled();
+      expect(result).toEqual({ status: 'ok' });
+    });
+  });
+
+  describe('getCurrentDatabase', () => {
+    it('should return the current database name from the db service', async () => {
+      const result = await appController.getCurrentDatabase();
+      expect(dbService.query).toHaveBeenCalledWith('SELECT current_database();');
+      expect(result).toEqual({ database: 'test_db' });
     });
   });
 });
