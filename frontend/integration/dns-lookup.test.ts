@@ -1,30 +1,54 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test';
 
-test('DNS query is automatically made when loading home page', async ({
-  page,
-}) => {
-  // store DNS-related network requests for verification
-  const dnsRequests: string[] = []
+test('AWS resources are automatically loaded on page startup', async ({ page }) => {
+  // Store intercepted API requests
+  let interceptedApiRequest = false;
+  let apiResponseData: any = null;
 
-  // monitor network requests
+  // Monitor network requests
   page.on('request', (request) => {
-    const url = request.url()
-    // Filter for DNS reverse lookup requests
-    if (url.includes('/dns-query') && url.includes('in-addr.arpa')) {
-      dnsRequests.push(url)
+    const url = request.url();
+    if (url.includes('/api/aws/load-resources')) {
+      interceptedApiRequest = true;
     }
-  })
+  });
+
+  // Intercept API response
+  page.on('response', async (response) => {
+    const url = response.url();
+    if (url.includes('/api/aws/load-resources') && response.status() === 200) {
+      apiResponseData = await response.json();
+    }
+  });
 
   // Navigate to the home page
-  await page.goto('/', {
-    waitUntil: 'networkidle',
-  })
+  await page.goto('http://localhost:3000/', { waitUntil: 'networkidle' });
 
-  await page.waitForTimeout(10000)
+  // Wait to capture the API call
+  await page.waitForTimeout(5000);
 
-  // verify that at least one DNS query was made
-  expect(dnsRequests.length).toBeGreaterThan(0)
-  // verify the format of the DNS query
-  expect(dnsRequests[0]).toContain('in-addr.arpa')
-  expect(dnsRequests[0]).toContain('type=PTR')
-})
+  // Verify that the API request was made
+  expect(interceptedApiRequest).toBe(true);
+
+  // Validate API response
+  expect(apiResponseData).toBeDefined();
+  expect(apiResponseData.resources).toBeInstanceOf(Array);
+  expect(apiResponseData.dependencies).toBeInstanceOf(Array);
+  expect(apiResponseData.resources.length).toBeGreaterThan(0);
+  expect(apiResponseData.dependencies.length).toBeGreaterThan(0);
+
+  // Check if expected resource types exist
+  const resourceTypes = apiResponseData.resources.map((r: any) => r.type);
+  expect(resourceTypes).toContain('EC2');
+  expect(resourceTypes).toContain('AWS');
+  expect(resourceTypes).toContain('Domain');
+  expect(resourceTypes).toContain('IP');
+
+  // Check if expected dependencies exist
+  const dependencyRelationships = apiResponseData.dependencies.map((d: any) => d.relationship);
+  expect(dependencyRelationships).toContain('connects to');
+
+  // Log the response for debugging
+  console.log('Resources:', apiResponseData.resources.slice(0, 5)); // Show first 5 resources
+  console.log('Dependencies:', apiResponseData.dependencies.slice(0, 5)); // Show first 5 dependencies
+});
