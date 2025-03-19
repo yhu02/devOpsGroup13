@@ -6,6 +6,8 @@ import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandInput } fr
 import { AWS_SERVICES_ID, AwsResource, Dependency, FormattedLogResult, CloudWatchQueryConfig } from '../../../shared/types/AWS'
 import { AwsIpRangeManager } from './awsIpRangeManager'
 import { DnsResponse } from '../../../shared/types/dnsAndIp';
+import { RDSClient, DescribeDBInstancesCommand, DescribeDBInstancesCommandInput } from "@aws-sdk/client-rds";
+import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
 const cloudWatchClient = new CloudWatchLogsClient(process.env.ENVIRONMENT == "tst" ? awsConfig : {});
 
@@ -104,16 +106,17 @@ class CloudWatchQuery {
 export async function getVPCFlowLogs(client: CloudWatchLogsClient): Promise<FormattedLogResult[]> {
 
   const queryConfig: CloudWatchQueryConfig = {
-    logGroupNames: ['/aws/vpc/test-flow-logs'],
+    // logGroupNames: ['/aws/vpc/test-flow-logs'],
+    logGroupNames: ['/demo/flow-logs'], // Demo log group
     queryString: `
-        fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
-        | filter action = "ACCEPT" and not(type like "ntm")
-        | sort @timestamp desc
-        | limit 300`,
+      fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
+      | filter action = "ACCEPT" and not (srcPort = 123 or dstPort = 123 and protocol = 17)
+      | sort @timestamp desc
+      | limit 2000`,
     startTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     endTime: new Date(),
-    limit: 300,
-  };
+    limit: 2000,
+  }
 
   const query = new CloudWatchQuery(client, queryConfig);
 
@@ -180,10 +183,11 @@ class ResourceMetaData {
     // all of the getters / api handlers
     // they should take the mapManager and use its .add function
 
-    //should be handled differently
-    const vpcId = 'vpc-0c71a936b3fd5716c'
+    const vpcId = 'vpc-05ae9ae580dbfaf83' // Demo vpc
+    // const vpcId = 'vpc-0c71a936b3fd5716c'
     const vpcRegion = 'eu-central-1'
-    await describe_ec2s(vpcId,vpcRegion)    
+    await describe_ec2s(vpcId, vpcRegion)
+    await describe_rdss(vpcId, vpcRegion)
 
 
     // this.resourceMap.set('172.31.38.213', {
@@ -302,6 +306,8 @@ class ResourceMetaData {
     } catch (error) {
         console.error("Error describing EC2 instances:", error);
     }
+    console.log(resourceMetadata)
+
  }
 
  export class DnsResolver {
@@ -454,3 +460,69 @@ class ResourceMetaData {
    console.log(`Resolved hostnames for ${dnsResolutionPromises.length} IPs`)
  }
  
+ 
+ export async function describe_rdss(
+  vpcId: string,
+  region: string
+){
+ const resourceMetadata: ResourceMetaData = ResourceMetaData.getInstance();
+
+ const rdsClient = new RDSClient(process.env.ENVIRONMENT == "tst" ? awsConfig : {});
+
+ try {
+     const data = await rdsClient.send(new DescribeDBInstancesCommand({}));
+     const instances = data.DBInstances || [];
+
+     // Build an array of async tasks
+     const tasks = instances
+       .filter(instance => instance.DBSubnetGroup?.VpcId === vpcId && instance.DBInstanceIdentifier)
+       .map(async instance => {
+         const instanceId = instance.DBInstanceIdentifier!;
+         const endpoint = instance.Endpoint?.Address;
+
+         if (endpoint) {
+           try {
+             const dnsResult = await invokeDnsLookupLambda(endpoint);
+               const resolvedIp = JSON.parse(dnsResult.body).address;
+             if (resolvedIp) {
+               resourceMetadata.setResource(resolvedIp, { id: instanceId, type: 'RDS', name: instanceId });
+             } else {
+               resourceMetadata.setResource(endpoint, { id: instanceId, type: 'RDS', name: instanceId });
+             }
+           } catch (dnsError) {
+             console.error(`DNS lookup failed for endpoint ${endpoint}:`, dnsError);
+             resourceMetadata.setResource(endpoint, { id: instanceId, type: 'RDS', name: instanceId });
+           }
+         } else {
+           resourceMetadata.setResource(instanceId, { id: instanceId, type: 'RDS', name: instanceId });
+         }
+       });
+
+     // Wait for all lookups to complete
+     await Promise.all(tasks);
+
+   } catch (error) {
+     console.error("Error describing RDS instances:", error);
+   }
+
+   console.log(resourceMetadata);
+}
+
+export async function invokeLambda(functionName: string, payload: any): Promise<any> {
+  const lambdaClient = new LambdaClient(process.env.ENVIRONMENT == "tst" ? awsConfig : {});
+  const command = new InvokeCommand({
+    FunctionName: functionName,
+    InvocationType: "RequestResponse",
+    Payload: new TextEncoder().encode(JSON.stringify(payload)),
+  });
+  const response = await lambdaClient.send(command);
+  if (response.Payload) {
+    const responseString = new TextDecoder().decode(response.Payload);
+    return JSON.parse(responseString);
+  }
+  return null;
+}
+
+export async function invokeDnsLookupLambda(domain: string): Promise<any> {
+  return await invokeLambda("dnsLookupLambda", { domain });
+}
