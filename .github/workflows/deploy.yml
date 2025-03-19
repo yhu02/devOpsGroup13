@@ -39,27 +39,27 @@ jobs:
         with:
           node-version: '20'
 
-      - name: check-code-quality
+      - name: Check code quality
         uses: ./actions/check-code-quality
         with:
           language: TypeScript
           dependency-manager: npm
 
-      - name: check-code-security
+      - name: Check code security
         uses: ./actions/check-code-security
         with:
           language: TypeScript
           dependency-manager: npm
           severity-level: none
 
-      - name: run test coverage
+      - name: Run test coverage frontend
         continue-on-error: true
         working-directory: ./frontend
         run: |
           npm install
           npm run test:coverage
 
-      - name: run test coverage
+      - name: Run test coverage backend
         continue-on-error: true
         working-directory: ./backend
         run: |
