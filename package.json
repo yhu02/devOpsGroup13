@@ -1,0 +1,8 @@
+{
+  "name": "cloudvisualizer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modern cloud environments consist of various interconnected applications and services, making it challenging to understand and manage their relationships effectively. While traditional monitoring tools offer basic insights, there is a growing need for intelligent visualization systems that automatically discover and present complex application dependencies in an actionable format.",
+  "author": "",
+  "license": "ISC"
+}
