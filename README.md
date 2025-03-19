@@ -21,20 +21,20 @@ Explainability in Dependency Mapping – Providing insights into how and why clo
 
 # Local instlalation on host machine
 # Frontend is served as static files via backend
-cd frontend; npm run build
-cd backend; npm run build
-cd backend; npm run start
+* cd frontend; npm run build
+* cd backend; npm run build
+* cd backend; npm run start
 
 # Local installation using Dockerfile
-docker build -t cloudvisualizer .
-docker run -p 3000:3000 cloudvisualizer
+* docker build -t cloudvisualizer .
+* docker run -p 3000:3000 cloudvisualizer
 
 # Deployment in AWS
-Clone this repo
-Configure AWS OIDC for automatic deployment
-Create a VPC
-Add the VPC id to /platform/v1/vpc/id in SSM
-Create a Hosted Zone
-Add the Hosted Zone name to /platform/v1/dns/public/name in SSM
-Add the Hosted Zone id to /platform/v1/dns/public/id in SSM
-Deploy using the pipeline, and view the running ecs container using the AWS console
+* Clone this repo
+* Configure AWS OIDC for automatic deployment
+* Create a VPC
+* Add the VPC id to /platform/v1/vpc/id in SSM
+* Create a Hosted Zone
+* Add the Hosted Zone name to /platform/v1/dns/public/name in SSM
+* Add the Hosted Zone id to /platform/v1/dns/public/id in SSM
+* Deploy using the pipeline, and view the running ecs container using the AWS console
