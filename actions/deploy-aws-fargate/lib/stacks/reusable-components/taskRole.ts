@@ -19,11 +19,11 @@ export function createTaskRole(stack: BatchFargateStack): iam.IRole {
     iam.ManagedPolicy.fromAwsManagedPolicyName('ReadOnlyAccess')
   );
 
-  // Add custom S3 write policy
   taskRole.addManagedPolicy(
-    new iam.ManagedPolicy(stack, `${appName}S3WritePolicy`, {
+    new iam.ManagedPolicy(stack, `${appName}S3AndLambdaPolicy`, {
       document: new iam.PolicyDocument({
         statements: [
+          // S3 permissions
           new iam.PolicyStatement({
             actions: [
               's3:PutObject',
@@ -35,10 +35,17 @@ export function createTaskRole(stack: BatchFargateStack): iam.IRole {
             ],
             effect: iam.Effect.ALLOW,
           }),
+          
+          // Lambda invoke permission
+          new iam.PolicyStatement({
+            actions: ['lambda:InvokeFunction'],
+            resources: ['arn:aws:lambda:*:*:function:*'],
+            effect: iam.Effect.ALLOW,
+          }),
         ],
       }),
     }),
-  );
+  ); 
 
   // Add custom policies
   const policiesDirPath = join(process.env.GITHUB_WORKSPACE ?? '', 'infra/aws/policies');
