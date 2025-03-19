@@ -2,7 +2,7 @@ import { AWS_SERVICES_ID, AwsResource, Dependency, FormattedLogResult } from '@/
 import { getVPCFlowLogs } from './cloudwatchApi'
 import { AwsIpRangeManager } from './awsIpRangeManager'
 import { retrieveDNSInfo } from './dnsResolver'
-import { describe_ec2s} from './resources-in-vpc'
+import { describe_ec2s, describe_rdss} from './resources-in-vpc'
 export class ResourceMetaData {
   private static instance: ResourceMetaData
   private resourceMap: Map<string, AwsResource>
@@ -59,9 +59,13 @@ export class ResourceMetaData {
     // they should take the mapManager and use its .add function
 
     //should be handled differently
-    const vpcId = 'vpc-0c71a936b3fd5716c'
+    const vpcId = 'vpc-05ae9ae580dbfaf83' // Demo vpc
+    // const vpcId = 'vpc-0c71a936b3fd5716c'
     const vpcRegion = 'eu-central-1'
-    await describe_ec2s(vpcId,vpcRegion)    
+    await describe_ec2s(vpcId, vpcRegion)
+    await describe_rdss(vpcId, vpcRegion)
+
+
 
 
     // this.resourceMap.set('172.31.38.213', {

@@ -65,10 +65,11 @@ class CloudWatchQuery {
 function createVpcFlowLogsQuery(): CloudWatchQuery {
   const client = CloudWatch.getInstance()
   return new CloudWatchQuery(client, {
-    logGroupNames: ['/aws/vpc/test-flow-logs'],
+    // logGroupNames: ['/aws/vpc/test-flow-logs'],
+    logGroupNames: ['/demo/flow-logs'], // Demo log group
     queryString: `
       fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
-      | filter action = "ACCEPT" and not(type like "ntm")
+      | filter action = "ACCEPT" and not (srcPort = 123 or dstPort = 123 and protocol = 17)
       | sort @timestamp desc
       | limit 2000`,
     startTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),

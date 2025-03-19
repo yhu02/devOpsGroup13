@@ -1,4 +1,7 @@
 import { EC2Client, DescribeInstancesCommand, DescribeInstancesCommandInput } from "@aws-sdk/client-ec2";
+import { RDSClient, DescribeDBInstancesCommand, DescribeDBInstancesCommandInput } from "@aws-sdk/client-rds";
+import { invokeDnsLookupLambda } from "./invokeLambda"
+
 import { ResourceMetaData } from "./resourceMap";
 
   export async function describe_ec2s(
@@ -44,4 +47,60 @@ import { ResourceMetaData } from "./resourceMap";
     } catch (error) {
         console.error("Error describing EC2 instances:", error);
     }
+
+    console.log(resourceMetadata)
+
  }
+
+ export async function describe_rdss(
+    vpcId: string,
+    region: string
+ ){
+   const resourceMetadata: ResourceMetaData = ResourceMetaData.getInstance();
+
+   const rdsClient = new RDSClient({
+     region: import.meta.env.VITE_AWS_REGION || region,
+     credentials: {
+       accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+       secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
+     },
+   });
+
+   try {
+       const data = await rdsClient.send(new DescribeDBInstancesCommand({}));
+       const instances = data.DBInstances || [];
+
+       // Build an array of async tasks
+       const tasks = instances
+         .filter(instance => instance.DBSubnetGroup?.VpcId === vpcId && instance.DBInstanceIdentifier)
+         .map(async instance => {
+           const instanceId = instance.DBInstanceIdentifier!;
+           const endpoint = instance.Endpoint?.Address;
+
+           if (endpoint) {
+             try {
+               const dnsResult = await invokeDnsLookupLambda(endpoint);
+                 const resolvedIp = JSON.parse(dnsResult.body).address;
+               if (resolvedIp) {
+                 resourceMetadata.setResource(resolvedIp, { id: instanceId, type: 'RDS', name: instanceId });
+               } else {
+                 resourceMetadata.setResource(endpoint, { id: instanceId, type: 'RDS', name: instanceId });
+               }
+             } catch (dnsError) {
+               console.error(`DNS lookup failed for endpoint ${endpoint}:`, dnsError);
+               resourceMetadata.setResource(endpoint, { id: instanceId, type: 'RDS', name: instanceId });
+             }
+           } else {
+             resourceMetadata.setResource(instanceId, { id: instanceId, type: 'RDS', name: instanceId });
+           }
+         });
+
+       // Wait for all lookups to complete
+       await Promise.all(tasks);
+
+     } catch (error) {
+       console.error("Error describing RDS instances:", error);
+     }
+
+     console.log(resourceMetadata);
+}
