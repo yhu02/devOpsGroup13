@@ -20,6 +20,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set outputs
         id: set
@@ -47,6 +49,8 @@ jobs:
 
       - name: Check code security
         uses: ./actions/check-code-security
+        env: 
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           language: TypeScript
           dependency-manager: npm
