@@ -70,10 +70,10 @@ function createVpcFlowLogsQuery(): CloudWatchQuery {
       fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
       | filter action = "ACCEPT" and not(type like "ntm")
       | sort @timestamp desc
-      | limit 300`,
+      | limit 2000`,
     startTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
     endTime: new Date(),
-    limit: 300,
+    limit: 2000,
   })
 }
 

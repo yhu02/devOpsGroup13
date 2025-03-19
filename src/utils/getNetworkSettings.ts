@@ -1,4 +1,6 @@
-export function GetNetworkSettings() {
+import type { Options } from 'vis-network'
+
+export function GetNetworkSettings(): Options {
   return {
     autoResize: true,
     width: '100%',
@@ -130,16 +132,19 @@ export function GetNetworkSettings() {
       hierarchicalRepulsion: {
         centralGravity: 0.0,
         springLength: 100,
-        springConstant: 0.01,
-        nodeDistance: 200,
+        springConstant: 0.001,
+        nodeDistance: 250,
       },
       stabilization: {
         enabled: true,
-        iterations: 200,
-        updateInterval: 25,
+        iterations: 2000,
+        updateInterval: 50,
         fit: true,
+        damping: 0.9,
       },
-      minVelocity: 0.75,
+      minVelocity: 0.1,
+      maxVelocity: 10,
+      timestep: 0.3,
     },
   }
 }
