@@ -18,6 +18,8 @@
   "dependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.767.0",
     "@aws-sdk/client-ec2": "^3.767.0",
+    "@aws-sdk/client-lambda": "^3.771.0",
+    "@aws-sdk/client-rds": "^3.761.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
