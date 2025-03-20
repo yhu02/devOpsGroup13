@@ -62,7 +62,7 @@ import { CdkGraphDiagramPlugin } from '@aws/pdk/cdk-graph-plugin-diagram';
       taskRoleArn: DUMMY_ARN,
       stsClientId: 'test-client-id',
       s3ApplicationDataBucketArn: DUMMY_ARN,
-      repositoryName: 'cloudvisualizer'
+      repositoryName: 'cloudvisualizer',
     } satisfies AppContext,
   });
 

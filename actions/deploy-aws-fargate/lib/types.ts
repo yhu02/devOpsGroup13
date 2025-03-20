@@ -26,11 +26,11 @@ export type AppContext = Partial<{
   useBAR: string | boolean;
   useCDB: string | boolean;
   useAMB: string | boolean;
-  useSnowflake: string | boolean
-  useAPIM: string | boolean
+  useSnowflake: string | boolean;
+  useAPIM: string | boolean;
   expose2APIM: string | boolean;
   apimHost: string;
-  ecsEphemeralStorage: string | number
+  ecsEphemeralStorage: string | number;
   cpu: string | number;
   memory: string | number;
   environment: 'tst' | 'acc' | 'prd';

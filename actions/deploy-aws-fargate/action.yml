@@ -181,7 +181,7 @@ outputs:
     value: ${{ steps.cdk-deploy.outputs.task-role-arn }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Pre-flight check non-empty inputs
       shell: bash
@@ -332,7 +332,7 @@ runs:
         always-auth: true
         node-version: 20.x
         registry-url: https://npm.pkg.github.com
-        scope: "@alliander"
+        scope: '@alliander'
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -529,7 +529,6 @@ runs:
           --context stsClientId="${{ inputs.sts-client-id }}" \
           --context s3ApplicationDataBucketArn="${{ steps.pre-flight.outputs.s3-application-data-bucket-arn }}" \
           --context repositoryName="${{ inputs.repository-name }}"
-
 
     - name: CDK deployment
       id: cdk-deploy

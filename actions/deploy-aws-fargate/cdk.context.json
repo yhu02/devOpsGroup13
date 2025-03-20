@@ -51,17 +51,13 @@
     "loadBalancerCanonicalHostedZoneId": "Z215JYRZR1TBD5",
     "loadBalancerDnsName": "CommonALB-1015953717.eu-central-1.elb.amazonaws.com",
     "vpcId": "vpc-0c362e2917c79c8f9",
-    "securityGroupIds": [
-      "sg-035371f204d572ad2"
-    ],
+    "securityGroupIds": ["sg-035371f204d572ad2"],
     "ipAddressType": "ipv4"
   },
   "load-balancer-listener:account=970547379814:listenerArn=arn$:aws$:elasticloadbalancing$:eu-central-1$:970547379814$:listener/app/CommonALB/c573535c63ab0329/b20f710a81a89c44:loadBalancerType=application:region=eu-central-1": {
     "listenerArn": "arn:aws:elasticloadbalancing:eu-central-1:970547379814:listener/app/CommonALB/c573535c63ab0329/b20f710a81a89c44",
     "listenerPort": 80,
-    "securityGroupIds": [
-      "sg-035371f204d572ad2"
-    ]
+    "securityGroupIds": ["sg-035371f204d572ad2"]
   },
   "security-group:account=970547379814:region=eu-central-1:securityGroupId=sg-035371f204d572ad2": {
     "securityGroupId": "sg-035371f204d572ad2",
@@ -132,19 +128,13 @@
     "loadBalancerCanonicalHostedZoneId": "Z215JYRZR1TBD5",
     "loadBalancerDnsName": "CommonALB-1282598812.eu-central-1.elb.amazonaws.com",
     "vpcId": "vpc-083b36601ad8922e2",
-    "securityGroupIds": [
-      "sg-0a3bc4d9d342ddd9b",
-      "sg-040d45d02f1568121"
-    ],
+    "securityGroupIds": ["sg-0a3bc4d9d342ddd9b", "sg-040d45d02f1568121"],
     "ipAddressType": "ipv4"
   },
   "load-balancer-listener:account=767398075425:listenerArn=arn$:aws$:elasticloadbalancing$:eu-central-1$:767398075425$:listener/app/CommonALB/c87cc93842437629/9967bfb005977cf1:loadBalancerType=application:region=eu-central-1": {
     "listenerArn": "arn:aws:elasticloadbalancing:eu-central-1:767398075425:listener/app/CommonALB/c87cc93842437629/9967bfb005977cf1",
     "listenerPort": 443,
-    "securityGroupIds": [
-      "sg-0a3bc4d9d342ddd9b",
-      "sg-040d45d02f1568121"
-    ]
+    "securityGroupIds": ["sg-0a3bc4d9d342ddd9b", "sg-040d45d02f1568121"]
   },
   "security-group:account=767398075425:region=eu-central-1:securityGroupId=sg-0a3bc4d9d342ddd9b": {
     "securityGroupId": "sg-0a3bc4d9d342ddd9b",

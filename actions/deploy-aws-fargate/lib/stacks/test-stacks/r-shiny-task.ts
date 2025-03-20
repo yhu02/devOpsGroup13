@@ -35,7 +35,7 @@ export default {
   memory: '16384',
   environment: 'prd',
   otap: 'P',
-  environmentVariables: "env1;env2;env3",
+  environmentVariables: 'env1;env2;env3',
   useEFS: 'true',
   version: '2.0.0.9059',
   jobSchedule: 'cron(0 1 * * ? *)',

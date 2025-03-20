@@ -60,7 +60,7 @@ outputs:
     value: ${{ steps.deploy-ecr-repository.outputs.repository-arn }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Pre-flight check non-empty inputs
       shell: bash

@@ -42,9 +42,7 @@ export function addContainerToFargateCluster(
   if (useNginxProxy) {
     const nginxContainer = taskDefinition.addContainer('NGINXContainer', {
       containerName: 'NGINX-Proxy',
-      image: ecs.ContainerImage.fromRegistry(
-        `${NginxProxyImage}`,
-      ),
+      image: ecs.ContainerImage.fromRegistry(`${NginxProxyImage}`),
       readonlyRootFilesystem: true,
       logging: new ecs.AwsLogDriver({ streamPrefix: 'ecs-nginx' }),
       healthCheck: undefined,
@@ -62,10 +60,12 @@ export function addContainerToFargateCluster(
     image: ecs.ContainerImage.fromEcrRepository(ecrRepository, version),
     command: mainEntrypoint.split(' ').filter(Boolean), // Split the command string into an array of strings
     essential: true,
-    linuxParameters: environment === 'tst' ?
-      new ecs.LinuxParameters(stack, 'LinuxParameters', {
-        initProcessEnabled: true,
-      }) : undefined,
+    linuxParameters:
+      environment === 'tst'
+        ? new ecs.LinuxParameters(stack, 'LinuxParameters', {
+            initProcessEnabled: true,
+          })
+        : undefined,
     readonlyRootFilesystem: true,
     logging: new ecs.AwsLogDriver({
       streamPrefix: 'fargate',

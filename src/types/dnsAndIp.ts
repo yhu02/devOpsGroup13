@@ -1,13 +1,13 @@
-
 export interface DnsResponse {
-  Status: number;
+  Status: number
   Answer?: {
-    name: string;
-    type: number;
-    TTL: number;
-    data: string;
-  }[];
-}export interface AwsIpRanges {
+    name: string
+    type: number
+    TTL: number
+    data: string
+  }[]
+}
+export interface AwsIpRanges {
   createDate: string
   prefixes: AwsIpRangeEntry[]
   ipv6_prefixes: any[]
@@ -18,4 +18,3 @@ export interface AwsIpRangeEntry {
   service: string
   network_border_group: string
 }
-

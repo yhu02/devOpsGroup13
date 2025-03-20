@@ -7,10 +7,13 @@ Create a stack for AWS Batch jobs and Fargate containers
 ## Install required packages to run CDK for this app
 
 1. First install the following global npm packages:
+
 ```bash
 npm i -g aws-cdk @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint jest ts-node typescript
 ```
+
 2. Follow steps 1 to 4 as described in these [docs to get access to the NPM library of Alliander](https://alliander.atlassian.net/wiki/spaces/CLOUD/pages/2512454472/Alliander+NPM+packages+gebruiken)
+
    1. In this cdk app we depend on the [cloud-cdk-libs of Alliander](https://github.com/Alliander/cloud-cdk-libs).
 
 3. Next, run `npm ci` in the folder of this application where the `[package.json]` is located to install the project's npm dependencies.
@@ -53,12 +56,14 @@ To synthesize the template for local troubleshooting, do the following steps:
 **Disclaimer**: in the [`main.ts`](main.ts), we've setup some default context variables to simulate certain types of jobs and settings. These can be overridden in the cli by adding an additional `--context` argument to your CDK Synth command (as displayed in step 3).
 
 ## Inputs
+
 Inputs with a default value are not required to be passed in the function call. If they are not passed, the default value will be used
-- `app-name` __required__ - The normalized name of your app containing only [A-Za-z][A-Za-z0-9-]
+
+- `app-name` **required** - The normalized name of your app containing only [A-Za-z][A-Za-z0-9-]
 - `app-type` - Can be `job`, `job-definition`, `shiny`, `shiny-task`, `streamlit`, `streamlit-task`, `fastapi` or `fastapi-task`
-- `account-id` __required__ - The AWS account id to deploy the stack to
+- `account-id` **required** - The AWS account id to deploy the stack to
 - `region` - default: `eu-central-1` - The AWS region for the stack
-- `image-version` __required__ - The version tag of the image
+- `image-version` **required** - The version tag of the image
 - `ecs-container-insights` - default: `false` - Whether you want to use CloudWatch alarms.
 - `use-spot` - default: `true` - Whether to use Spot Instances
 - `ecs-circuit-breaker-rollback` - default: `true` - Whether to enable rollback on deployment failure
@@ -88,12 +93,12 @@ Inputs with a default value are not required to be passed in the function call. 
 - `container-health-check-timeout` - default `5`. The time period in seconds to wait for a health check to succeed before it is considered a failure. You may specify between 2 and 60 seconds. The default value is 5. Health check timeout must be smaller than the interval. Expert mode, only change for non-standard infrastructure.
 - `container-health-check-retries` - default `3`. The number of times to retry a failed health check before the container is considered unhealthy. You may specify between 1 and 10 retries. The default value is 3. Expert mode, only change for non-standard infrastructure.
 - `container-health-check-start-period` - default `0`. The optional grace period to provide containers time to bootstrap before failed health checks count towards the maximum number of retries. You can specify between 0 and 300 seconds. By default, the startPeriod is off (0). Expert mode, only change for non-standard infrastructure.
-- `cpu` - __required__ - The (custom) number of (v)CPUs for your container
-- `memory` - __required__ - The (custom) amount of memory for your container
+- `cpu` - **required** - The (custom) number of (v)CPUs for your container
+- `memory` - **required** - The (custom) amount of memory for your container
 - `main-entrypoint` - default: `run_application -m default` - The command to put in the Fargate Taskdefinition
 - `task-entrypoint` - default: `run_application -m job -j default` - The command to put in the Fargate Scheduled Taskdefinition
 - `scriptName` - default: `Auto` - Not the name of a script, but the switch that is used in your `run_application` script to switch between different functionalities. Can be `Auto`, or literally anything else you have chosen
-- `environment` - __required__ - The environment in which to launch the container. Can be `tst`, `acc`, or `prd`
+- `environment` - **required** - The environment in which to launch the container. Can be `tst`, `acc`, or `prd`
 - `job-schedule` - default: `''` - The jobschedule for Fargate tasks
 - `job-notification-topic` - default: `''` - The topic to send notifications to
 - `verbose-output` - Provide more output for debugging purposes
@@ -103,12 +108,15 @@ Inputs with a default value are not required to be passed in the function call. 
 - `sts-client-id` - default `''` - The client-id of the STS service to be injected in the ECS Fargate sidecar container (in case of an earlier STS deployment (APIM consuming)).
 
 ## Outputs
+
 - `task-role-arn` - The ARN of the ECS taskrole.
 
 ## Summary
+
 A message stating that deployment of the stack to AWS was successful
 
 ## Usage
+
 This action can be used by adding the following step to your workflow:
 
 ```
@@ -133,6 +141,7 @@ This action can be used by adding the following step to your workflow:
 ```
 
 ## Issues
+
 - `app-type` has no default value and is not required. This will probably create an issue downstream
 - `otap` is not deprecated in this action
 - `otap` is not required and has no default value

@@ -83,11 +83,15 @@ export function createFargateStack(stack: BatchFargateStack, props: AutobahnFarg
 
   const taskRole = props.taskRoleArn
     ? iam.Role.fromRoleArn(stack, 'TaskRole', props.taskRoleArn)
-    : createTaskRole(stack) as iam.Role;
+    : (createTaskRole(stack) as iam.Role);
 
   let applicationDataBucketName: string = '';
   if (props.s3ApplicationDataBucketArn) {
-    const applicationDataBucket = s3.Bucket.fromBucketArn(stack, 'ApplicationDataBucket', props.s3ApplicationDataBucketArn);
+    const applicationDataBucket = s3.Bucket.fromBucketArn(
+      stack,
+      'ApplicationDataBucket',
+      props.s3ApplicationDataBucketArn,
+    );
     applicationDataBucketName = applicationDataBucket.bucketName;
     applicationDataBucket.grantReadWrite(taskRole);
   }
@@ -103,10 +107,17 @@ export function createFargateStack(stack: BatchFargateStack, props: AutobahnFarg
   createECSExecRolePolicyAndAppendToTaskRole(stack, taskRole);
   const ecsContainerInsights = props.ecsContainerInsights;
 
-
   const ecrRepository = ecr.Repository.fromRepositoryName(stack, 'Repository', props.repositoryName);
   const executionRole = getOrCreateEcsExecutionRole(stack, ecrRepository, false);
-  const taskDefinition = createTaskDefinition(stack, taskRole, executionRole, ecsVolumes, props.ecsEphemeralStorage, props.cpu, props.memory);
+  const taskDefinition = createTaskDefinition(
+    stack,
+    taskRole,
+    executionRole,
+    ecsVolumes,
+    props.ecsEphemeralStorage,
+    props.cpu,
+    props.memory,
+  );
   const externalIntegrationSecrets = createExternalIntegrationSecrets(
     stack,
     taskRole,
@@ -196,7 +207,7 @@ export function createFargateStack(stack: BatchFargateStack, props: AutobahnFarg
   // Allow ECS exec to work on the container
   // https://github.com/aws/containers-roadmap/issues/1359
   // Only root should be able to ECS exec on the container, so appuser doesn't have to have permissions to these paths
-  if(props.environment === 'tst') {
+  if (props.environment === 'tst') {
     createAndMountVolume([mainContainer], 'var-lib-amazon-ssm', '/var/lib/amazon/ssm');
     createAndMountVolume([mainContainer], 'var-log-amazon-ssm', '/var/log/amazon/ssm');
     createAndMountVolume([mainContainer], 'managed-agents', '/managed-agents');
@@ -303,7 +314,7 @@ function addTask(
   jobSchedule: string,
   jobNotificationTopic: string | undefined,
 ) {
-  const containerCommand = taskEntrypoint.split(' ').filter(Boolean)
+  const containerCommand = taskEntrypoint.split(' ').filter(Boolean);
 
   const rule = createEventRuleForTaskAppType(stack, jobSchedule);
 
@@ -437,7 +448,7 @@ function appendSidecarContainerToTaskDefinition(
   stsClientId: string,
   verboseOutput: string,
   sidecarOptions: {
-    name: 'apim' | 'snowflake',
+    name: 'apim' | 'snowflake';
     ingressHost: string;
   },
 ): ecs.ContainerDefinition {
@@ -468,14 +479,16 @@ function appendSidecarContainerToTaskDefinition(
     readonlyRootFilesystem: true,
   });
 
-  sidecarContainer.addPortMappings({ hostPort: portNumber, containerPort: portNumber }, { hostPort: proxyPortNumber, containerPort: proxyPortNumber });
+  sidecarContainer.addPortMappings(
+    { hostPort: portNumber, containerPort: portNumber },
+    { hostPort: proxyPortNumber, containerPort: proxyPortNumber },
+  );
 
   new cdk.CfnOutput(stack, `${sidecarOptions.name}Sidecar`, {
     value: `Proxy Port: ${proxyPortNumber}, Token Port: ${portNumber}`,
-  })
+  });
 
   return sidecarContainer;
-
 }
 
 function createEventRuleForTaskAppType(stack: BatchFargateStack, jobSchedule: string) {
@@ -691,7 +704,6 @@ function getReusableALBListener(stack: BatchFargateStack) {
   });
 }
 
-
 function createExternalIntegrationSecrets(
   stack: BatchFargateStack,
   taskRole: cdk.aws_iam.IRole,
@@ -747,11 +759,11 @@ function createExternalIntegrationSecrets(
     containerSecrets['RDS_DB_NAME'] = ecs.Secret.fromSecretsManager(
       new cdk.aws_secretsmanager.Secret(stack, 'RDSDBNameSecret', {
         secretStringValue: cdk.SecretValue.unsafePlainText(rdsDbName),
-      })
-    );   
+      }),
+    );
   }
-    
-    return containerSecrets;
+
+  return containerSecrets;
 }
 
 function createSecret(
@@ -776,8 +788,7 @@ export function createAndMountVolume(
   containerPath: string,
   readOnly: boolean = false,
 ) {
-
-  containers.forEach((container) => {
+  containers.forEach(container => {
     const taskDefinition = container.taskDefinition;
 
     // Check if the volume has already been added
@@ -794,5 +805,4 @@ export function createAndMountVolume(
       readOnly: readOnly,
     });
   });
-
 }

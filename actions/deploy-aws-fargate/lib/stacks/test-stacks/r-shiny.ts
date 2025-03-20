@@ -35,7 +35,7 @@ export default {
   memory: '16384',
   environment: 'tst',
   otap: 'T',
-  environmentVariables: "env1;env2;env3",
+  environmentVariables: 'env1;env2;env3',
   useEFS: 'true',
   version: '0.1.2',
   jobSchedule: '',

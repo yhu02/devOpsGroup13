@@ -34,7 +34,7 @@ const stacksWithVariants = stacks.flatMap(s => {
     {
       name: `${s.name}WithRDS`,
       appContext: {
-        ...s.appContext
+        ...s.appContext,
       },
     },
     {

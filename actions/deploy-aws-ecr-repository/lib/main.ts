@@ -1,10 +1,10 @@
-import { SetupDeployEcrApp } from "./deployEcr";
+import { SetupDeployEcrApp } from './deployEcr'
 
 new SetupDeployEcrApp({
   context: {
-    stackName: "ecr-stack",
-    repositoryName: "ecr-repository",
-    lifecyclePolicyDescription: "Test policy",
+    stackName: 'ecr-stack',
+    repositoryName: 'ecr-repository',
+    lifecyclePolicyDescription: 'Test policy',
     lifecyclePolicyMaxImageAge: 0,
     lifecyclePolicyMaxImageCount: 3,
     permissionsPolicyJson: `{
@@ -27,4 +27,4 @@ new SetupDeployEcrApp({
   }`,
     immutableTags: true,
   },
-});
+})

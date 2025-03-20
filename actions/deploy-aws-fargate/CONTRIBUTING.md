@@ -9,7 +9,7 @@ Please follow the [GRAM styleguide](https://alliander.atlassian.net/wiki/spaces/
 
 For all contributions to this open source projects
 
-1. Please associate your commit with your Alliander.com email unless you have a history of contributing to the repo under a different email before your employment at Alliander. 
+1. Please associate your commit with your Alliander.com email unless you have a history of contributing to the repo under a different email before your employment at Alliander.
 2. You and your team may commit to the project without contacting the project members first, but please contact the project members if you are making significant changes to the project’s scope.
 
 ## Filing bugs and change requests
@@ -24,7 +24,7 @@ This project follows the following [Code of Conduct](https://github.com/Alliande
 ## Source Code Headers
 
 Every file containing source code must include copyright. This includes any JS/CSS files that you might be serving out to
-browsers. 
+browsers.
 
 Alliander header:
 

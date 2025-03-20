@@ -1,8 +1,13 @@
-import { AWS_SERVICES_ID, AwsResource, Dependency, FormattedLogResult } from '@/types/AWS'
-import { getVPCFlowLogs } from './cloudwatchApi'
+import {
+  AWS_SERVICES_ID,
+  AwsResource,
+  Dependency,
+  FormattedLogResult,
+} from '@/types/AWS'
 import { AwsIpRangeManager } from './awsIpRangeManager'
+import { getVPCFlowLogs } from './cloudwatchApi'
 import { retrieveDNSInfo } from './dnsResolver'
-import { describe_ec2s, describe_rdss} from './resources-in-vpc'
+import { describe_ec2s, describe_rdss } from './resources-in-vpc'
 export class ResourceMetaData {
   private static instance: ResourceMetaData
   private resourceMap: Map<string, AwsResource>
@@ -64,9 +69,6 @@ export class ResourceMetaData {
     const vpcRegion = 'eu-central-1'
     await describe_ec2s(vpcId, vpcRegion)
     await describe_rdss(vpcId, vpcRegion)
-
-
-
 
     // this.resourceMap.set('172.31.38.213', {
     //   id: 'EC2ID',
