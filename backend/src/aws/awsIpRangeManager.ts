@@ -1,4 +1,5 @@
 import ipaddr from 'ipaddr.js'
+
 import { AWS_IP_RANGES_URL } from '../../../shared/types/AWS'
 import { AwsIpRanges } from '../../../shared/types/dnsAndIp'
 
@@ -7,10 +8,10 @@ import { AwsIpRanges } from '../../../shared/types/dnsAndIp'
 export class AwsIpRangeManager {
   private static instance: AwsIpRangeManager
   private initialized: boolean = false
-  private ranges: {
+  private ranges: Array<{
     prefix: string
     parsed: [ipaddr.IPv4 | ipaddr.IPv6, number]
-  }[] = []
+  }> = []
   private initPromise: Promise<void> | null = null
 
   private constructor() {}

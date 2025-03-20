@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { AwsIpRangeManager } from '../awsIpRangeManager'
 
 // Mock fetch because we don't want to make real network calls

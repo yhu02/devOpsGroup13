@@ -1,19 +1,20 @@
-import { Edge, Network, Node } from 'vis-network'
 import { DataSet } from 'vis-data'
+import { Edge, Network, Node } from 'vis-network'
+
 import type { AwsResource, Dependency } from '../../../shared/types/AWS'
 import { resourceVisuals } from '../utils/AWSVisuals'
 
-const resources: AwsResource[] = [
+const resources: Array<AwsResource> = [
   { id: 'vpc-1', type: 'VPC', name: 'Main VPC' },
   { id: 'rds-1', type: 'RDS', name: 'OrdersDB' },
 ]
 
-const dependencies: Dependency[] = [
+const dependencies: Array<Dependency> = [
   { from: 'vpc-1', to: 'rds-1', relationship: 'contains' },
 ]
 
 // Prepare node and edge datasets for Vis Network
-const nodeData: Node[] = resources.map((res) => {
+const nodeData: Array<Node> = resources.map((res) => {
   const visNode: Node = {
     id: res.id,
     label: res.name,
@@ -25,7 +26,7 @@ const nodeData: Node[] = resources.map((res) => {
   return visNode
 })
 
-const edgeData: Edge[] = dependencies.map((dep) => ({
+const edgeData: Array<Edge> = dependencies.map((dep) => ({
   from: dep.from,
   to: dep.to,
   label: dep.relationship,

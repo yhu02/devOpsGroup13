@@ -14,7 +14,7 @@ export class BatchFargateStack extends cdk.Stack {
     }
 
     if (isFargateAppType(this.appType)) {
-      let baseImagesAccountId = this.getStringFromContext('baseImagesAccountId')
+      const baseImagesAccountId = this.getStringFromContext('baseImagesAccountId');
       let scheduledTask = false;
       let useNginxProxy = false;
       let NginxProxyImage = '';

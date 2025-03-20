@@ -4,5 +4,17 @@
   "private": true,
   "description": "Modern cloud environments consist of various interconnected applications and services, making it challenging to understand and manage their relationships effectively. While traditional monitoring tools offer basic insights, there is a growing need for intelligent visualization systems that automatically discover and present complex application dependencies in an actionable format.",
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@eslint/compat": "^1.2.7",
+    "@eslint/eslintrc": "^3.3.0",
+    "@eslint/js": "^9.22.0",
+    "@microsoft/eslint-formatter-sarif": "^3.1.0",
+    "eslint": "^9.22.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^15.15.0",
+    "typescript-eslint": "^8.27.0"
+  }
 }

@@ -1,7 +1,8 @@
+import { readdirSync, readFileSync, existsSync } from 'fs';
+import { join } from 'path';
+
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import { join } from 'path';
-import { readdirSync, readFileSync, existsSync } from 'fs';
 
 import { BatchFargateStack } from '../deploy-batch-fargate-stack';
 
@@ -15,9 +16,7 @@ export function createTaskRole(stack: BatchFargateStack): iam.IRole {
   });
 
   // Add AWS managed ReadOnlyAccess policy
-  taskRole.addManagedPolicy(
-    iam.ManagedPolicy.fromAwsManagedPolicyName('ReadOnlyAccess')
-  );
+  taskRole.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('ReadOnlyAccess'));
 
   taskRole.addManagedPolicy(
     new iam.ManagedPolicy(stack, `${appName}S3AndLambdaPolicy`, {
@@ -25,17 +24,11 @@ export function createTaskRole(stack: BatchFargateStack): iam.IRole {
         statements: [
           // S3 permissions
           new iam.PolicyStatement({
-            actions: [
-              's3:PutObject',
-              's3:DeleteObject',
-            ],
-            resources: [
-              `arn:aws:s3:::${appName}*`,
-              `arn:aws:s3:::${appName}*/*`,
-            ],
+            actions: ['s3:PutObject', 's3:DeleteObject'],
+            resources: [`arn:aws:s3:::${appName}*`, `arn:aws:s3:::${appName}*/*`],
             effect: iam.Effect.ALLOW,
           }),
-          
+
           // Lambda invoke permission
           new iam.PolicyStatement({
             actions: ['lambda:InvokeFunction'],
@@ -45,7 +38,7 @@ export function createTaskRole(stack: BatchFargateStack): iam.IRole {
         ],
       }),
     }),
-  ); 
+  );
 
   // Add custom policies
   const policiesDirPath = join(process.env.GITHUB_WORKSPACE ?? '', 'infra/aws/policies');

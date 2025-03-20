@@ -1,8 +1,7 @@
 export default {
-    test: {
-      coverage: {
-        reporter: ['text', 'lcov'],
-      },
+  test: {
+    coverage: {
+      reporter: ['text', 'lcov'],
     },
-  }
-  
+  },
+}

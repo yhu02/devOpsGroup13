@@ -1,7 +1,8 @@
 import { Suspense, lazy } from 'react'
 import { Route, BrowserRouter as Router, Routes } from 'react-router'
-import SideBar from './components/SideBar'
+
 import HealthCheck from './components/HealthCheck'
+import SideBar from './components/SideBar'
 
 // Lazy load route components
 const NotFound = lazy(() => import('./components/NotFound'))

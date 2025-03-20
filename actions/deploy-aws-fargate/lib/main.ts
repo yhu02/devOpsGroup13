@@ -1,10 +1,10 @@
+import { CdkGraph } from '@aws/pdk/cdk-graph';
+import { CdkGraphDiagramPlugin } from '@aws/pdk/cdk-graph-plugin-diagram';
 import * as cdk from 'aws-cdk-lib';
 
 import { DUMMY_ARN } from './constants';
 import { BatchFargateStack } from './stacks/deploy-batch-fargate-stack';
 import { AppContext } from './types';
-import { CdkGraph } from '@aws/pdk/cdk-graph';
-import { CdkGraphDiagramPlugin } from '@aws/pdk/cdk-graph-plugin-diagram';
 
 (async () => {
   const app = new cdk.App({
@@ -62,7 +62,7 @@ import { CdkGraphDiagramPlugin } from '@aws/pdk/cdk-graph-plugin-diagram';
       taskRoleArn: DUMMY_ARN,
       stsClientId: 'test-client-id',
       s3ApplicationDataBucketArn: DUMMY_ARN,
-      repositoryName: 'cloudvisualizer'
+      repositoryName: 'cloudvisualizer',
     } satisfies AppContext,
   });
 

@@ -14,8 +14,6 @@ export function isFargateTaskType(appType: string): appType is KnownFargateTaskT
   return !!appType && knownFargateTaskTypes.includes(appType as KnownFargateTaskTypes);
 }
 
-export function isValidAppType(
-  appType: string,
-): appType is KnownFargateAppTypes | KnownFargateTaskTypes {
+export function isValidAppType(appType: string): appType is KnownFargateAppTypes | KnownFargateTaskTypes {
   return !!appType && allAppTypes.includes(appType);
 }

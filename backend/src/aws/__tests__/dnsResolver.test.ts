@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
 import { DnsResolver, retrieveDNSInfo } from '../aws.controller'
 
 // Mock fetch so we don't make real network calls during tests
