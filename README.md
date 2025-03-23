@@ -38,3 +38,5 @@ Explainability in Dependency Mapping – Providing insights into how and why clo
 * Add the Hosted Zone name to /platform/v1/dns/public/name in SSM
 * Add the Hosted Zone id to /platform/v1/dns/public/id in SSM
 * Deploy using the pipeline, and view the running ecs container using the AWS console
+
+[Link to demo video](https://youtu.be/M2ed4olbjz4)
