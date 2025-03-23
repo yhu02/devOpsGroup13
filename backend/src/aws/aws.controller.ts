@@ -1,7 +1,5 @@
 import {
   CloudWatchLogsClient,
-  StartQueryCommand,
-  GetQueryResultsCommand,
   DescribeLogGroupsCommand,
 } from '@aws-sdk/client-cloudwatch-logs'
 import {
@@ -24,12 +22,12 @@ import {
   AwsResource,
   Dependency,
   FormattedLogResult,
-  CloudWatchQueryConfig,
 } from '../../../shared/types/AWS'
-import { DnsResponse } from '../../../shared/types/dnsAndIp'
 import { awsConfig } from '../awsConfig'
 
 import { AwsIpRangeManager } from './awsIpRangeManager'
+import { getVPCFlowLogs } from './cloudWatchQuery'
+import { DnsResolver } from './dnsResolver'
 
 const cloudWatchClient = new CloudWatchLogsClient(
   process.env.ENVIRONMENT == 'tst' ? awsConfig : {}
@@ -76,91 +74,6 @@ export class AwsController {
       this.logger.error('AWS health check failed', error)
       throw new HttpException('unhealthy', HttpStatus.INTERNAL_SERVER_ERROR)
     }
-  }
-}
-
-class CloudWatchQuery {
-  private client: CloudWatchLogsClient
-  private config: CloudWatchQueryConfig
-
-  constructor(client: CloudWatchLogsClient, config: CloudWatchQueryConfig) {
-    this.client = client
-    this.config = config
-  }
-
-  async run(): Promise<Array<FormattedLogResult>> {
-    try {
-      const { queryId } = await this.client.send(
-        new StartQueryCommand({
-          logGroupNames: this.config.logGroupNames,
-          queryString: this.config.queryString,
-          startTime: Math.floor(this.config.startTime.getTime() / 1000),
-          endTime: Math.floor(this.config.endTime.getTime() / 1000),
-          limit: this.config.limit,
-        })
-      )
-
-      if (!queryId) throw new Error('Failed to start CloudWatch Logs query')
-
-      return await this.getResults(queryId)
-    } catch (error) {
-      console.error('CloudWatch Logs query error:', error)
-      return []
-    }
-  }
-
-  private async getResults(
-    queryId: string
-  ): Promise<Array<FormattedLogResult>> {
-    const maxRetries = 60
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-      const { results, status } = await this.client.send(
-        new GetQueryResultsCommand({ queryId })
-      )
-
-      if (
-        ['Complete', 'Failed', 'Cancelled', 'Timeout'].includes(status || '')
-      ) {
-        if (status !== 'Complete')
-          throw new Error(`Query failed with status: ${status}`)
-
-        return (
-          results?.map((entry) =>
-            Object.fromEntries(entry.map(({ field, value }) => [field, value]))
-          ) || []
-        )
-      }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-    }
-
-    throw new Error(`Query timed out after ${maxRetries} attempts`)
-  }
-}
-
-export async function getVPCFlowLogs(
-  client: CloudWatchLogsClient
-): Promise<Array<FormattedLogResult>> {
-  const queryConfig: CloudWatchQueryConfig = {
-    // logGroupNames: ['/aws/vpc/test-flow-logs'],
-    logGroupNames: ['/demo/flow-logs'], // Demo log group
-    queryString: `
-      fields @timestamp, srcAddr, dstAddr, dstPort, srcPort, protocol, action, bytes, packets
-      | filter action = "ACCEPT" and not (srcPort = 123 or dstPort = 123 and protocol = 17)
-      | sort @timestamp desc
-      | limit 2000`,
-    startTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-    endTime: new Date(),
-    limit: 2000,
-  }
-
-  const query = new CloudWatchQuery(client, queryConfig)
-
-  try {
-    return await query.run()
-  } catch (error) {
-    console.error('Error querying VPC Flow Logs:', error)
-    return []
   }
 }
 
@@ -348,109 +261,6 @@ export async function describe_ec2s(vpcId: string, region: string) {
     console.error('Error describing EC2 instances:', error)
   }
   console.log(resourceMetadata)
-}
-
-export class DnsResolver {
-  private static instance: DnsResolver
-  private cache: Map<string, string> = new Map()
-  private pendingRequests: Map<string, Promise<string>> = new Map()
-
-  // Cloudflare dns-query api
-  private dnsApiUrl = 'https://cloudflare-dns.com/dns-query'
-
-  private constructor() {}
-
-  public static getInstance(): DnsResolver {
-    if (!DnsResolver.instance) {
-      DnsResolver.instance = new DnsResolver()
-    }
-    return DnsResolver.instance
-  }
-
-  // Attempt to resolve an IP to a hostname
-  public async resolveIp(ip: string): Promise<string> {
-    // Check if we already have this information cached
-    if (this.cache.has(ip)) {
-      return this.cache.get(ip)!
-    }
-
-    // Check if there's a pending request for this IP
-    if (this.pendingRequests.has(ip)) {
-      return this.pendingRequests.get(ip)!
-    }
-
-    // Create a new request
-    const requestPromise = this._fetchPtrRecord(ip)
-    this.pendingRequests.set(ip, requestPromise)
-
-    try {
-      const hostname = await requestPromise
-      this.cache.set(ip, hostname)
-      return hostname
-    } finally {
-      this.pendingRequests.delete(ip)
-    }
-  }
-
-  // Format IP for reverse DNS lookup
-  private _formatReverseIp(ip: string): string {
-    // Convert IP
-    // e.g: 8.8.8.8 becomes 8.8.8.8.in-addr.arpa
-    return `${ip.split('.').reverse().join('.')}.in-addr.arpa`
-  }
-
-  // Fetch the PTR record for an IP.
-  // A PTR record is a reverse DNS lookup returning the hostname for an IP.
-  private async _fetchPtrRecord(ip: string): Promise<string> {
-    try {
-      const reversedIp = this._formatReverseIp(ip)
-      const response = await fetch(
-        `${this.dnsApiUrl}?name=${reversedIp}&type=PTR`,
-        {
-          headers: {
-            Accept: 'application/dns-json',
-          },
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error(`DNS query failed: ${response.statusText}`)
-      }
-
-      const data: DnsResponse = await response.json()
-
-      // If we get a response, return the hostname
-      if (data.Answer && data.Answer.length > 0) {
-        return data.Answer[0].data
-      } else {
-        // If we don't get a response, return the IP
-        return ip
-      }
-    } catch (error) {
-      console.error(`Error resolving hostname for IP ${ip}:`, error)
-      // Return the IP if lookup failed
-      return ip
-    }
-  }
-
-  // Get the resource name for an IP
-  public getResourceName(ip: string, hostname: string): string {
-    if (hostname && hostname !== ip) {
-      // Strip the hostname to just the domain name (e.g remove subdomains)
-      const parts: Array<string> = hostname.split('.')
-      if (parts.length >= 2) {
-        const domainParts: Array<string> = parts.slice(-2)
-        if (domainParts[0].length > 3) {
-          // for cases like "co.uk"
-          return domainParts.join('.')
-        } else if (parts.length >= 3) {
-          return parts.slice(-3).join('.')
-        }
-      }
-      return hostname
-    }
-    return `IP ${ip}`
-  }
 }
 
 // Retrieve DNS info for a set of IPs
