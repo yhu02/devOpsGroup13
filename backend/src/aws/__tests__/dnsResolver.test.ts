@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { DnsResolver, retrieveDNSInfo } from '../aws.controller'
+import { retrieveDNSInfo } from '../aws.controller'
+import { DnsResolver } from '../dnsResolver'
 
 // Mock fetch so we don't make real network calls during tests
 globalThis.fetch = vi.fn()
